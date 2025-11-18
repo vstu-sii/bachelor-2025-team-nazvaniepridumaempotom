@@ -1,0 +1,58 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check commit messages
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { execSync } = require('child_process');
+          try {
+            const result = execSync('npx commitlint --from=origin/develop --to=HEAD', { encoding: 'utf8' });
+            console.log(result);
+          } catch (error) {
+            console.error('Commit message validation failed:', error.stdout);
+            core.setFailed('Invalid commit messages');
+          }
+
+    - name: Check Dockerfiles
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: |
+          ./frontend/Dockerfile.dev
+          ./backend/Dockerfile.dev
+          ./llm-service/Dockerfile.dev
+
+    - name: Check for secrets in code
+      uses: gitleaks/gitleaks-action@v2
+      with:
+        config-path: .gitleaks.toml
+
+    - name: Validate docker-compose
+      run: |
+        docker-compose -f docker-compose.dev.yml config --quiet
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3

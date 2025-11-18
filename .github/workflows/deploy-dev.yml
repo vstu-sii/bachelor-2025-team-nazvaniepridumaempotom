@@ -1,0 +1,57 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:  
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Dev Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.DEV_SERVER_HOST }}
+        username: ${{ secrets.DEV_SERVER_USER }}
+        key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+        script: |
+          cd /opt/app
+          
+          # Pull latest images
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          
+          docker-compose -f docker-compose.dev.yml pull
+          docker-compose -f docker-compose.dev.yml down
+          docker-compose -f docker-compose.dev.yml up -d
+          
+          # Health check
+          sleep 30
+          curl -f http://localhost:8000/health || exit 1
+          curl -f http://localhost:3000 || exit 1
+          
+          # Cleanup old images
+          docker image prune -f
+
+    - name: Notify Slack
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        text: | 
+          Deployed to Development Environment
+          Commit: ${{ github.sha }}
+          By: ${{ github.actor }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      if: success()
