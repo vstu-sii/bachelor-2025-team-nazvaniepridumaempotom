@@ -1,0 +1,76 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ] # Запускать при push в main
+  pull_request:
+    branches: [ main ] # Запускать при pull request в main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # Среда выполнения
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3 # Скачать код проекта
+
+    - name: Set up Python 3.9 # Пример для Python, адаптируйте под ваш язык
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies and test
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest # Пример зависимостей
+        flake8 . # Проверка стиля кода
+        pytest # Запуск тестов
+
+  docker-build-push:
+    needs: build-and-test # Запускать после build-and-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: . # Путь к Dockerfile
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest # ВАШ ОБРАЗ!
+
+  deploy-to-vm:
+    needs: docker-build-push # Запускать после docker-build-push
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH Agent
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Add host key to known_hosts
+      run: ssh-keyscan <172.21.63.32> >> ~/.ssh/known_hosts # Убедиться, что IP ВМ известен
+
+    - name: Deploy to server
+      env:
+        SSH_HOST: <172.21.63.32>
+        SSH_USER: mvideo
+      run: |
+        ssh ${{ env.SSH_HOST }} "
+          cd ~/my_app && # Перейти в директорию приложения
+          docker stop my-app-container || true && # Остановить старый контейнер, если есть
+          docker rm my-app-container || true &&   # Удалить старый контейнер
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest && # Скачать новый образ
+          docker run -d -p 5000:5000 --name my-app-container ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest # Запустить новый контейнер
