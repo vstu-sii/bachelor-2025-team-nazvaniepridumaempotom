@@ -185,7 +185,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:app-${{ env.APP_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:
+        build-args: |
           BRANCH_SOURCE: ${{ env.APP_BRANCH }}
           CONFIG_SOURCE: ${{ env.CONFIG_BRANCH }}
 
@@ -279,4 +279,5 @@ jobs:
         echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
+
 
