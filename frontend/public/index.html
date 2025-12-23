@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Analysis App</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Food Analysis Application</h1>
+        <div class="status info">
+            <strong>Status:</strong> Frontend is running
+        </div>
+        <div id="backend-status" class="status">
+            Checking backend connection...
+        </div>
+        <div id="llm-status" class="status">
+            Checking LLM service...
+        </div>
+    </div>
+    <script>
+        // Проверяем бэкенд
+        fetch('http://localhost:8000/health')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('backend-status').innerHTML = 
+                    `<strong>Backend:</strong> ${data.status}`;
+                document.getElementById('backend-status').className = 'status success';
+            })
+            .catch(err => {
+                document.getElementById('backend-status').innerHTML = 
+                    `<strong>Backend:</strong> Not connected`;
+                document.getElementById('backend-status').className = 'status info';
+            });
+    </script>
+</body>
+</html>

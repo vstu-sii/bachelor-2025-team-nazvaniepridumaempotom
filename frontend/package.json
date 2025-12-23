@@ -1,0 +1,14 @@
+{
+  "name": "food-analysis-frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "echo 'Frontend stub running' && python -m http.server 3000",
+    "build": "echo 'Building frontend stub...'",
+    "test": "echo 'Running frontend tests...' && exit 0",
+    "lint": "echo 'Linting...' && exit 0",
+    "format:check": "echo 'Format check...' && exit 0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
