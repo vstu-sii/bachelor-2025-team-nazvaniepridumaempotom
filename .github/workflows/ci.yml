@@ -102,8 +102,8 @@ jobs:
       working-directory: ./app/backend
       run: |
         # Копируем requirements из config
-        cp ../../config/requirements.txt . || true
-        cp ../../config/requirements-dev.txt . 2>/dev/null || true
+        cp config/requirements.txt . || true
+        # cp config/requirements-dev.txt . 2>/dev/null || true
         
         python -m pip install --upgrade pip
         pip install -r requirements.txt
@@ -141,7 +141,7 @@ jobs:
       with:
         python-version: '3.11'
         cache: 'pip'
-        cache-dependency-path: requirements.txt
+        #cache-dependency-path: requirements.txt
 
     - name: Install Python dependencies
       run: |
