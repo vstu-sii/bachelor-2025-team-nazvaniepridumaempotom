@@ -159,8 +159,7 @@ jobs:
       run: |
         if [ ! -f "requirements.txt" ]; then
           echo "requirements.txt not found, creating default..."
-          # Используем кавычки для EOF
-          cat > requirements.txt << "EOF"
+          cat > requirements.txt <<EOF
           fastapi==0.104.1
           uvicorn[standard]==0.24.0
           pillow==10.1.0
