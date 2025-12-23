@@ -298,7 +298,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:app-${{ env.APP_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:
+        build-args: |
           BRANCH_SOURCE: ${{ env.APP_BRANCH }}
           CONFIG_SOURCE: ${{ env.CONFIG_BRANCH }}
 
