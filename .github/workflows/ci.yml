@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ fullstack, d2-ai, MLOPS ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ fullstack, d2-ai, MLOPS ]
   workflow_dispatch:  # Добавляем ручной запуск
 
 env:
