@@ -175,7 +175,7 @@ jobs:
           pytest-asyncio==0.21.1
           black==23.11.0
           flake8==6.1.0
-          EOF
+        EOF
           echo "Created requirements.txt with default dependencies"
           cat requirements.txt
         else
