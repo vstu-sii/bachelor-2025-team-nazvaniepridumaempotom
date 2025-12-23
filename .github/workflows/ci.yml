@@ -129,57 +129,57 @@ jobs:
         name: backend-coverage
 
   test-llm-service:
-  name: Test LLM Service
-  runs-on: ubuntu-latest
-  
-  steps:
-  - name: Checkout code
-    uses: actions/checkout@v4
+    name: Test LLM Service
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-  - name: Setup Python
-    uses: actions/setup-python@v4
-    with:
-      python-version: '3.11'
-      cache: 'pip'
-      cache-dependency-path: requirements.txt
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: requirements.txt
 
-  - name: Install Python dependencies
-    run: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt
-      pip install pytest black flake8
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest black flake8
 
-  - name: Install Ollama (для тестов)
-    run: |
-      curl -fsSL https://ollama.com/install.sh | sh
-      ollama --version
+    - name: Install Ollama (для тестов)
+      run: |
+        curl -fsSL https://ollama.com/install.sh | sh
+        ollama --version
 
-  - name: Run unit tests (без Ollama)
-    run: |
-      # Тестируем модули, не требующие Ollama
-      python -m pytest tests/ -v \
-        -k "not test_ollama" \
-        --tb=short
+    - name: Run unit tests (без Ollama)
+      run: |
+        # Тестируем модули, не требующие Ollama
+        python -m pytest tests/ -v \
+          -k "not test_ollama" \
+          --tb=short
 
-  - name: Run linting
-    run: |
-      black --check .
-      flake8 .
+    - name: Run linting
+      run: |
+        black --check .
+        flake8 .
 
-  - name: Check critical files exist
-    run: |
-      echo "Checking required files:"
-      ls -la
-      echo ""
-      echo "Required files check:"
-      [ -f "main.py" ] && echo "✓ main.py exists" || echo "✗ main.py missing"
-      [ -f "requirements.txt" ] && echo "✓ requirements.txt exists" || echo "✗ requirements.txt missing"
-      [ -f "app.py" ] && echo "✓ app.py exists" || echo "✗ app.py missing"
-      [ -f "model_wrapper.py" ] && echo "✓ model_wrapper.py exists" || echo "✗ model_wrapper.py missing"
-      
-      echo ""
-      echo "Prompt files:"
-      ls -la *.txt *.json
+    - name: Check critical files exist
+      run: |
+        echo "Checking required files:"
+        ls -la
+        echo ""
+        echo "Required files check:"
+        [ -f "main.py" ] && echo "✓ main.py exists" || echo "✗ main.py missing"
+        [ -f "requirements.txt" ] && echo "✓ requirements.txt exists" || echo "✗ requirements.txt missing"
+        [ -f "app.py" ] && echo "✓ app.py exists" || echo "✗ app.py missing"
+        [ -f "model_wrapper.py" ] && echo "✓ model_wrapper.py exists" || echo "✗ model_wrapper.py missing"
+        
+        echo ""
+        echo "Prompt files:"
+        ls -la *.txt *.json
   
   test-ollama-integration:
     name: Test Ollama Integration
