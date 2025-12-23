@@ -278,39 +278,39 @@ jobs:
         echo "If files are missing, please ensure they are in the d2-ai branch."
 
     - name: Test API startup (quick test)
-    run: |
-      echo "Testing if the application can start..."
-      # Пробуем импортировать и запустить быстрый тест
-      python -c "
-      import sys
-      import subprocess
-      import time
-      
-      print('Python version:', sys.version)
-      print('')
-      
-      # Пробуем импортировать основные модули
-      try:
-          import fastapi
-          print('✓ fastapi', fastapi.__version__)
-      except ImportError as e:
-          print('✗ fastapi:', e)
-      
-      try:
-          import uvicorn
-          print('✓ uvicorn', uvicorn.__version__)
-      except ImportError as e:
-          print('✗ uvicorn:', e)
-      
-      try:
-          import pydantic
-          print('✓ pydantic', pydantic.__version__)
-      except ImportError as e:
-          print('✗ pydantic:', e)
-      
-      print('')
-      print('All dependencies seem to be installed correctly.')
-      "
+      run: |
+        echo "Testing if the application can start..."
+        # Пробуем импортировать и запустить быстрый тест
+        python -c "
+        import sys
+        import subprocess
+        import time
+        
+        print('Python version:', sys.version)
+        print('')
+        
+        # Пробуем импортировать основные модули
+        try:
+            import fastapi
+            print('✓ fastapi', fastapi.__version__)
+        except ImportError as e:
+            print('✗ fastapi:', e)
+        
+        try:
+            import uvicorn
+            print('✓ uvicorn', uvicorn.__version__)
+        except ImportError as e:
+            print('✗ uvicorn:', e)
+        
+        try:
+            import pydantic
+            print('✓ pydantic', pydantic.__version__)
+        except ImportError as e:
+            print('✗ pydantic:', e)
+        
+        print('')
+        print('All dependencies seem to be installed correctly.')
+        "
   
   test-ollama-integration:
     name: Test Ollama Integration
