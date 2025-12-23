@@ -192,8 +192,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:app-${{ env.APP_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:
-          BRANCH_SOURCE: ${{ env.APP_BRANCH }}
+        build-args:BRANCH_SOURCE: ${{ env.APP_BRANCH }}
 
     - name: Build and push Backend (from fullstack)
       uses: docker/build-push-action@v5
@@ -207,8 +206,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:app-${{ env.APP_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:
-          BRANCH_SOURCE: ${{ env.APP_BRANCH }}
+        build-args:BRANCH_SOURCE: ${{ env.APP_BRANCH }}
 
     - name: Build and push LLM Service (from d2-ai)
       uses: docker/build-push-action@v5
@@ -222,8 +220,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:model-${{ env.MODEL_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:
-          BRANCH_SOURCE: ${{ env.MODEL_BRANCH }}
+        build-args:BRANCH_SOURCE: ${{ env.MODEL_BRANCH }}
 
     - name: Generate docker-compose file
       run: |
