@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ fullstack, d2-ai, MLOPS ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ fullstack, d2-ai, MLOPS ]
   workflow_dispatch:  # Добавляем ручной запуск
 
 env:
@@ -192,7 +192,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:app-${{ env.APP_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:
+        build-args: |
           BRANCH_SOURCE: ${{ env.APP_BRANCH }}
 
     - name: Build and push Backend (from fullstack)
@@ -207,7 +207,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:app-${{ env.APP_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:
+        build-args: |
           BRANCH_SOURCE: ${{ env.APP_BRANCH }}
 
     - name: Build and push LLM Service (from d2-ai)
@@ -222,7 +222,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:model-${{ env.MODEL_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:
+        build-args: |
           BRANCH_SOURCE: ${{ env.MODEL_BRANCH }}
 
     - name: Generate docker-compose file
