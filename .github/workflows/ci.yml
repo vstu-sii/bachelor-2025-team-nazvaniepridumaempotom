@@ -192,7 +192,8 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:app-${{ env.APP_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:BRANCH_SOURCE: ${{ env.APP_BRANCH }}
+        build-args: |
+          BRANCH_SOURCE: ${{ env.APP_BRANCH }}
 
     - name: Build and push Backend (from fullstack)
       uses: docker/build-push-action@v5
@@ -206,7 +207,8 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:app-${{ env.APP_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:BRANCH_SOURCE: ${{ env.APP_BRANCH }}
+        build-args: |
+          BRANCH_SOURCE: ${{ env.APP_BRANCH }}
 
     - name: Build and push LLM Service (from d2-ai)
       uses: docker/build-push-action@v5
@@ -220,7 +222,8 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:model-${{ env.MODEL_BRANCH }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        build-args:BRANCH_SOURCE: ${{ env.MODEL_BRANCH }}
+        build-args: |
+          BRANCH_SOURCE: ${{ env.MODEL_BRANCH }}
 
     - name: Generate docker-compose file
       run: |
@@ -230,9 +233,6 @@ jobs:
         services:
           frontend:
             image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
-            build:
-              context: ./frontend
-              dockerfile: Dockerfile.dev
             ports:
               - "3000:3000"
             environment:
@@ -241,9 +241,6 @@ jobs:
         
           backend:
             image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
-            build:
-              context: ./backend
-              dockerfile: Dockerfile.dev
             ports:
               - "8000:8000"
             environment:
@@ -252,16 +249,13 @@ jobs:
         
           llm-service:
             image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}
-            build:
-              context: ./llm-service
-              dockerfile: Dockerfile.dev
             ports:
               - "5000:5000"
             environment:
               - MODEL_PATH=/app/models
               - BRANCH_SOURCE=${{ env.MODEL_BRANCH }}
             volumes:
-              - ./llm-service/models:/app/models
+              - ./models:/app/models
         EOF
         
         echo "Generated docker-compose.ci.yml"
