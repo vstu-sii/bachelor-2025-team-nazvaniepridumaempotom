@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+transformers
+torch
+datasets
+sentencepiece
+tokenizers
+accelerate
+bitsandbytes
+pillow
+pandas
+sacrebleu
+rouge-score
+langfuse
+kaggle
+pytest
