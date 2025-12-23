@@ -47,7 +47,7 @@ jobs:
         cp config/frontend/.prettierrc* app/frontend/ || true
 
     - name: Install dependencies
-      working-directory: ./app/frontend  # ОСТАЕТСЯ: код из app
+      working-directory: ./app/frontend  
       run: npm ci
   test-backend:
     name: Test Backend
@@ -57,13 +57,13 @@ jobs:
         python-version: ['3.9', '3.11']
 
     steps:
-    - name: Checkout app code (fullstack branch)
+    - name: Checkout app code 
       uses: actions/checkout@v4
       with:
         ref: ${{ env.APP_BRANCH }}
         path: app
 
-    - name: Checkout config files (infra branch)  
+    - name: Checkout config files
       uses: actions/checkout@v4
       with:
         ref: ${{ env.CONFIG_BRANCH }}
@@ -129,19 +129,19 @@ jobs:
     needs: [test-frontend, test-backend, test-llm-service]
     
     steps:
-    - name: Checkout app code (fullstack branch)
+    - name: Checkout app code 
       uses: actions/checkout@v4
       with:
         ref: ${{ env.APP_BRANCH }}
         path: app
 
-    - name: Checkout model code (d2-ai branch)
+    - name: Checkout model code 
       uses: actions/checkout@v4
       with:
         ref: ${{ env.MODEL_BRANCH }}
         path: model
 
-    - name: Checkout config files (infra branch)  
+    - name: Checkout config files  
       uses: actions/checkout@v4
       with:
         ref: ${{ env.CONFIG_BRANCH }}
