@@ -15,38 +15,38 @@ jobs:
   test-frontend:
     name: Test Frontend
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-    - name: Install dependencies
-      working-directory: ./frontend
-      run: npm ci
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
 
-    - name: Run linting
-      working-directory: ./frontend
-      run: |
-        npm run lint
-        npm run format:check
+      - name: Run linting
+        working-directory: ./frontend
+        run: |
+          npm run lint
+          npm run format:check
 
-    - name: Run tests
-      working-directory: ./frontend
-      run: npm test -- --coverage --watchAll=false
+      - name: Run tests
+        working-directory: ./frontend
+        run: npm test -- --coverage --watchAll=false
 
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
-      with:
-        directory: ./frontend/coverage
-        flags: frontend
-        name: frontend-coverage
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./frontend/coverage
+          flags: frontend
+          name: frontend-coverage
 
   # Тестирование Backend
   test-backend:
@@ -57,128 +57,128 @@ jobs:
         python-version: ['3.9', '3.11']
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-        cache-dependency-path: backend/requirements.txt
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
 
-    - name: Install dependencies
-      working-directory: ./backend
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov black flake8 mypy
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov black flake8 mypy
 
-    - name: Run linting
-      working-directory: ./backend
-      run: |
-        black --check .
-        flake8 .
-        mypy .
+      - name: Run linting
+        working-directory: ./backend
+        run: |
+          black --check .
+          flake8 .
+          mypy .
 
-    - name: Run tests
-      working-directory: ./backend
-      run: |
-        pytest --cov=app --cov-report=xml --cov-report=html tests/
+      - name: Run tests
+        working-directory: ./backend
+        run: |
+          pytest --cov=app --cov-report=xml --cov-report=html tests/
 
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
-      with:
-        directory: ./backend
-        flags: backend
-        name: backend-coverage
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./backend
+          flags: backend
+          name: backend-coverage
 
   # Тестирование LLM Service
   test-llm-service:
     name: Test LLM Service
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-        cache-dependency-path: llm-service/requirements.txt
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: llm-service/requirements.txt
 
-    - name: Install dependencies
-      working-directory: ./llm-service
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest black flake8
+      - name: Install dependencies
+        working-directory: ./llm-service
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest black flake8
 
-    - name: Run linting
-      working-directory: ./llm-service
-      run: |
-        black --check .
-        flake8 .
+      - name: Run linting
+        working-directory: ./llm-service
+        run: |
+          black --check .
+          flake8 .
 
-    - name: Run tests
-      working-directory: ./llm-service
-      run: pytest tests/
+      - name: Run tests
+        working-directory: ./llm-service
+        run: pytest tests/
 
-  # Сборка Docker образов
+  # Сборка Docker образов 
   build-docker:
     name: Build Docker Images
     runs-on: ubuntu-latest
     needs: [test-frontend, test-backend, test-llm-service]
-    
+    if: github.ref == 'refs/heads/MLOPS'
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push Frontend
-      uses: docker/build-push-action@v5
-      with:
-        context: ./frontend
-        file: ./frontend/Dockerfile.dev
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile.dev
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Build and push Backend
-      uses: docker/build-push-action@v5
-      with:
-        context: ./backend
-        file: ./backend/Dockerfile.dev
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:latest
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile.dev
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Build and push LLM Service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./llm-service
-        file: ./llm-service/Dockerfile.dev
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:latest
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}
-        cache-from: type=gha
-
-        cache-to: type=gha,mode=max
+      - name: Build and push LLM Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./llm-service
+          file: ./llm-service/Dockerfile.dev
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
