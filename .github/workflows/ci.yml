@@ -15,6 +15,278 @@ env:
   CONFIG_BRANCH: MLOPS
 
 jobs:
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout app code (fullstack branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.APP_BRANCH }}
+        path: app
+
+    - name: Checkout config files (infra branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.CONFIG_BRANCH }}
+        path: config
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: config/package-lock.json  # ВЕРНУЛИ на один уровень выше
+
+    - name: Copy config files to app directory
+      run: |
+        # Создаем директории если их нет
+        mkdir -p app/frontend
+        
+        # Копируем все конфигурационные файлы
+        if [ -f "config/package.json" ]; then
+          cp config/package*.json app/frontend/
+          cp config/.eslintrc* app/frontend/ 2>/dev/null || true
+          cp config/.prettierrc* app/frontend/ 2>/dev/null || true
+        fi
+
+    - name: Install dependencies
+      working-directory: ./app/frontend
+      run: npm ci
+
+    - name: Run linting
+      working-directory: ./app/frontend
+      run: |
+        npm run lint
+        npm run format:check
+
+    - name: Run tests
+      working-directory: ./app/frontend
+      run: npm test -- --coverage --watchAll=false
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./app/frontend/coverage
+        flags: frontend
+        name: frontend-coverage
+
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.11']
+
+    steps:
+    - name: Checkout app code (fullstack branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.APP_BRANCH }}
+        path: app
+
+    - name: Checkout config files (infra branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.CONFIG_BRANCH }}
+        path: config
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'  # УБИРАЕМ cache-dependency-path, будет работать без него
+
+    - name: Copy requirements and install dependencies
+      working-directory: ./app/backend
+      run: |
+        # Копируем requirements из config
+        cp ../../config/requirements.txt . || true
+        cp ../../config/requirements-dev.txt . 2>/dev/null || true
+        
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov black flake8 mypy
+
+    - name: Run linting
+      working-directory: ./app/backend
+      run: |
+        black --check .
+        flake8 .
+        mypy .
+
+    - name: Run tests
+      working-directory: ./app/backend
+      run: |
+        pytest --cov=app --cov-report=xml --cov-report=html tests/
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./app/backend
+        flags: backend
+        name: backend-coverage
+
+  test-llm-service:
+    name: Test LLM Service
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout model code (d2-ai branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.MODEL_BRANCH }}
+        path: model
+
+    - name: Checkout config files (infra branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.CONFIG_BRANCH }}
+        path: config
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Copy requirements and install dependencies
+      working-directory: ./model/llm-service
+      run: |
+        # Копируем requirements из config
+        cp ../../config/requirements.txt . || true
+        
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest black flake8
+
+    - name: Run linting
+      working-directory: ./model/llm-service
+      run: |
+        black --check .
+        flake8 .
+
+    - name: Run tests
+      working-directory: ./model/llm-service
+      run: pytest tests/
+
+    - name: Check model files exist
+      working-directory: ./model/llm-service
+      run: |
+        if [ -f "models/model.pth" ]; then
+          echo "Model file exists"
+          ls -la models/
+        else
+          echo "Warning: Model file not found in expected location"
+          echo "Looking for model files..."
+          find . -name "*.pth" -o -name "*.pt" -o -name "*.bin" | head -10
+        fi
+
+  build-docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test-frontend, test-backend, test-llm-service]
+    
+    steps:
+    - name: Checkout app code (fullstack branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.APP_BRANCH }}
+        path: app
+
+    - name: Checkout model code (d2-ai branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.MODEL_BRANCH }}
+        path: model
+
+    - name: Checkout config files (infra branch)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.CONFIG_BRANCH }}
+        path: config
+
+    - name: Prepare Docker build context
+      run: |
+        # Для Frontend: создаем симлинки или копируем файлы
+        mkdir -p docker-context/frontend
+        cp -r app/frontend/* docker-context/frontend/ 2>/dev/null || true
+        cp config/Dockerfile.dev docker-context/frontend/Dockerfile 2>/dev/null || true
+        cp config/package*.json docker-context/frontend/ 2>/dev/null || true
+        
+        # Для Backend: создаем симлинки или копируем файлы
+        mkdir -p docker-context/backend
+        cp -r app/backend/* docker-context/backend/ 2>/dev/null || true
+        cp config/Dockerfile.dev docker-context/backend/Dockerfile 2>/dev/null || true
+        cp config/requirements.txt docker-context/backend/ 2>/dev/null || true
+        
+        # Для LLM Service: создаем симлинки или копируем файлы
+        mkdir -p docker-context/llm-service
+        cp -r model/llm-service/* docker-context/llm-service/ 2>/dev/null || true
+        cp config/Dockerfile.dev docker-context/llm-service/Dockerfile 2>/dev/null || true
+        cp config/requirements.txt docker-context/llm-service/ 2>/dev/null || true
+        
+        echo "Docker build context prepared:"
+        ls -la docker-context/
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Frontend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./docker-context/frontend
+        file: ./docker-context/frontend/Dockerfile
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:app-${{ env.APP_BRANCH }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args:
+          BRANCH_SOURCE: ${{ env.APP_BRANCH }}
+          CONFIG_SOURCE: ${{ env.CONFIG_BRANCH }}
+
+    - name: Build and push Backend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./docker-context/backend
+        file: ./docker-context/backend/Dockerfile
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:latest
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:app-${{ env.APP_BRANCH }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args:
+          BRANCH_SOURCE: ${{ env.APP_BRANCH }}
+          CONFIG_SOURCE: ${{ env.CONFIG_BRANCH }}
+
+    - name: Build and push LLM Service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./docker-context/llm-service
+        file: ./docker-context/llm-service/Dockerfile
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:latest
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:model-${{ env.MODEL_BRANCH }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args:
+          BRANCH_SOURCE: ${{ env.MODEL_BRANCH }}
+          CONFIG_SOURCE: ${{ env.CONFIG_BRANCH }}
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
