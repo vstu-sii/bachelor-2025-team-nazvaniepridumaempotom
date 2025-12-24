@@ -496,7 +496,7 @@ jobs:
           echo "Copying frontend code from frontend/"
           cp -r frontend/* docker-context/frontend/ 2>/dev/null || echo "Note: Some files could not be copied"
         fi
-        
+        git checkout MLOPS
         # Копируем Dockerfile из ветки config
         if [ -f "config/frontend/Dockerfile.dev" ]; then
           echo "Using Dockerfile: config/frontend/Dockerfile.dev"
