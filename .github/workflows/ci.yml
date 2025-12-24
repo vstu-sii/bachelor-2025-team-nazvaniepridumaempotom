@@ -504,20 +504,20 @@ jobs:
         # 1. Проверяем frontend
         echo "Frontend:"
         if [ ! -d "app/frontend" ]; then
-          echo "  ❌ app/frontend directory not found"
+          echo "app/frontend directory not found"
           errors=$((errors + 1))
         else
-          echo "  ✅ app/frontend directory exists"
+          echo "app/frontend directory exists"
           echo "    Files: $(find app/frontend -type f | wc -l) files found"
         fi
         
         # Проверяем Dockerfile в config-source
         if [ -f "config-source/frontend/Dockerfile.dev" ] || [ -f "config-source/frontend/Dockerfile" ]; then
-          echo "  ✅ Dockerfile found in config-source/frontend/"
+          echo "Dockerfile found in config-source/frontend/"
         elif [ -f "config-source/Dockerfile.frontend" ] || [ -f "config-source/Dockerfile.dev" ]; then
-          echo "  ✅ Dockerfile found in config-source/"
+          echo "Dockerfile found in config-source/"
         else
-          echo "  ❌ No Dockerfile found for frontend"
+          echo "No Dockerfile found for frontend"
           errors=$((errors + 1))
         fi
         
@@ -526,20 +526,20 @@ jobs:
         # 2. Проверяем backend
         echo "Backend:"
         if [ ! -d "app/backend" ]; then
-          echo "  ❌ app/backend directory not found"
+          echo "app/backend directory not found"
           errors=$((errors + 1))
         else
-          echo "  ✅ app/backend directory exists"
+          echo "app/backend directory exists"
           echo "    Files: $(find app/backend -type f | wc -l) files found"
         fi
         
         # Проверяем Dockerfile в config-source
         if [ -f "config-source/backend/Dockerfile.dev" ] || [ -f "config-source/backend/Dockerfile" ]; then
-          echo "  ✅ Dockerfile found in config-source/backend/"
+          echo "Dockerfile found in config-source/backend/"
         elif [ -f "config-source/Dockerfile.backend" ] || [ -f "config-source/Dockerfile.dev" ]; then
-          echo "  ✅ Dockerfile found in config-source/"
+          echo "Dockerfile found in config-source/"
         else
-          echo "  ❌ No Dockerfile found for backend"
+          echo "No Dockerfile found for backend"
           errors=$((errors + 1))
         fi
         
@@ -548,19 +548,19 @@ jobs:
         # 3. Проверяем LLM service
         echo "LLM Service:"
         if [ ! -d "model" ]; then
-          echo "  ⚠️  model directory not found (may be expected for some branches)"
+          echo " model directory not found (may be expected for some branches)"
         else
-          echo "  ✅ model directory exists"
+          echo "model directory exists"
           echo "    Files: $(find model -type f | wc -l) files found"
         fi
         
         # Проверяем Dockerfile для LLM
-        if [ -f "config-source/llm-service/Dockerfile" ] || [ -f "config-source/llm-service/Dockerfile.dev" ]; then
-          echo "  ✅ Dockerfile found in config-source/llm-service/"
-        elif [ -f "config-source/Dockerfile" ] || [ -f "config-source/Dockerfile.dev" ]; then
-          echo "  ✅ Dockerfile found in config-source/"
+        if [ -f "config/llm-service/Dockerfile" ] || [ -f "config/llm-service/Dockerfile.dev" ]; then
+          echo "Dockerfile found in config-source/llm-service/"
+        elif [ -f "config/Dockerfile" ] || [ -f "config-source/Dockerfile.dev" ]; then
+          echo "Dockerfile found in config-source/"
         else
-          echo "  ⚠️  No Dockerfile found for LLM service"
+          echo "No Dockerfile found for LLM service"
         fi
         
         echo ""
@@ -571,7 +571,7 @@ jobs:
         echo "=== Summary: $errors critical errors ==="
         
         if [ $errors -gt 0 ]; then
-          echo "❌ Critical validation errors found. Check the structure above."
+          echo "Critical validation errors found. Check the structure above."
           exit 1
         fi
 
@@ -822,13 +822,13 @@ jobs:
     - name: Create build summary
       if: always()
       run: |
-        echo "## 🏗️ Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "##Docker Build Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
         echo "**Build time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        echo "### ✅ Successfully built:" >> $GITHUB_STEP_SUMMARY
+        echo "###Successfully built:" >> $GITHUB_STEP_SUMMARY
         
         if hashFiles('docker-context/frontend/Dockerfile'); then
           echo "- **Frontend**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
