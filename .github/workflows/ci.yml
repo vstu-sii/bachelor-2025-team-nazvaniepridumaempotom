@@ -484,99 +484,17 @@ jobs:
         echo ""
         echo "config (config branch):"
         find config -type f -name "Dockerfile*" -o -name "requirements*" -o -name "package*" | sort || echo "No files found"
-
-    - name: Validate structure
-      run: |
-        echo "=== Validating project structure ==="
-        echo ""
-        
-        errors=0
-        
-        # 1. Проверяем frontend
-        echo "Frontend:"
-        if [ -d "app-code/frontend" ]; then
-          echo "  ✅ Frontend code found in app-code/frontend/"
-          echo "    Files: $(find app-code/frontend -type f | wc -l) files"
-        else
-          echo "  ❌ Frontend code not found in app-code/frontend/"
-          errors=$((errors + 1))
-        fi
-        
-        if [ -f "config/frontend/Dockerfile.dev" ]; then
-          echo "  ✅ Dockerfile.dev found in config/frontend/"
-        elif [ -f "config/frontend/Dockerfile" ]; then
-          echo "  ✅ Dockerfile found in config/frontend/"
-        else
-          echo "  ❌ No Dockerfile found in config/frontend/"
-          errors=$((errors + 1))
-        fi
-        
-        echo ""
-        
-        # 2. Проверяем backend
-        echo "Backend:"
-        if [ -d "app-code/backend" ]; then
-          echo "  ✅ Backend code found in app-code/backend/"
-          echo "    Files: $(find app-code/backend -type f | wc -l) files"
-        else
-          echo "  ❌ Backend code not found in app-code/backend/"
-          errors=$((errors + 1))
-        fi
-        
-        if [ -f "config/backend/Dockerfile.dev" ]; then
-          echo "  ✅ Dockerfile.dev found in config/backend/"
-        elif [ -f "config/backend/Dockerfile" ]; then
-          echo "  ✅ Dockerfile found in config/backend/"
-        else
-          echo "  ❌ No Dockerfile found in config/backend/"
-          errors=$((errors + 1))
-        fi
-        
-        echo ""
-        
-        # 3. Проверяем LLM service
-        echo "LLM Service:"
-        if [ -d "model-code" ]; then
-          echo "  ✅ LLM code found in model-code/"
-          echo "    Files: $(find model-code -type f | wc -l) files"
-        else
-          echo "  ⚠️  LLM code not found in model-code/"
-        fi
-        
-        if [ -f "config/llm-service/Dockerfile" ]; then
-          echo "  ✅ Dockerfile found in config/llm-service/"
-        elif [ -f "config/llm-service/Dockerfile.dev" ]; then
-          echo "  ✅ Dockerfile.dev found in config/llm-service/"
-        elif [ -f "config/Dockerfile" ]; then
-          echo "  ✅ Dockerfile found in config/"
-        else
-          echo "  ⚠️  No Dockerfile found for LLM service"
-        fi
-        
-        echo ""
-        echo "=== All Dockerfiles in config ==="
-        find config -name "Dockerfile*" -type f | sort
-        
-        echo ""
-        echo "=== Summary: $errors critical errors ==="
-        
-        if [ $errors -gt 0 ]; then
-          echo "❌ Critical validation errors found."
-          exit 1
-        fi
-
     - name: Prepare Docker build contexts
       run: |
         echo "Preparing Docker build contexts..."
         
         # FRONTEND
-        echo "=== Preparing Frontend context ==="
         mkdir -p docker-context/frontend
         
         # Копируем код из ветки fullstack
-        if [ -d "app-code/frontend" ]; then
-          echo "Copying frontend code from app-code/frontend/"
-          cp -r app-code/frontend/* docker-context/frontend/ 2>/dev/null || echo "Note: Some files could not be copied"
+        if [ -d "frontend" ]; then
+          echo "Copying frontend code from frontend/"
+          cp -r frontend/* docker-context/frontend/ 2>/dev/null || echo "Note: Some files could not be copied"
         fi
         
         # Копируем Dockerfile из ветки config
@@ -592,7 +510,7 @@ jobs:
         fi
         
         # Копируем package.json если есть
-        if [ -f "config/frontend/package.json" ]; then
+        if [ -f "frontend/package.json" ]; then
           echo "Copying package.json from config/frontend/"
           cp config/frontend/package*.json docker-context/frontend/ 2>/dev/null || true
         fi
@@ -605,9 +523,9 @@ jobs:
         mkdir -p docker-context/backend
         
         # Копируем код из ветки fullstack
-        if [ -d "app-code/backend" ]; then
+        if [ -d "backend" ]; then
           echo "Copying backend code from app-code/backend/"
-          cp -r app-code/backend/* docker-context/backend/ 2>/dev/null || echo "Note: Some files could not be copied"
+          cp -r backend/* docker-context/backend/ 2>/dev/null || echo "Note: Some files could not be copied"
         fi
         
         # Копируем Dockerfile из ветки config
@@ -620,17 +538,6 @@ jobs:
         else
           echo "ERROR: No Dockerfile found for backend"
           exit 1
-        fi
-        
-        # Копируем requirements.txt
-        if [ -f "config/backend/requirements.txt" ]; then
-          echo "Copying requirements.txt from config/backend/"
-          cp config/backend/requirements.txt docker-context/backend/
-        elif [ -f "config/requirements.txt" ]; then
-          echo "Copying requirements.txt from config/"
-          cp config/requirements.txt docker-context/backend/
-        else
-          echo "WARNING: No requirements.txt found"
         fi
         
         echo "Backend context: $(find docker-context/backend -type f | wc -l) files"
@@ -661,20 +568,9 @@ jobs:
           exit 1
         fi
         
-        # Копируем requirements.txt
-        if [ -f "config/llm-service/requirements.txt" ]; then
-          echo "Copying requirements.txt from config/llm-service/"
-          cp config/llm-service/requirements.txt docker-context/llm-service/
-        elif [ -f "config/requirements.txt" ]; then
-          echo "Copying requirements.txt from config/"
-          cp config/requirements.txt docker-context/llm-service/
-        else
-          echo "WARNING: No requirements.txt found"
-        fi
-        
         echo "LLM Service context: $(find docker-context/llm-service -type f | wc -l) files"
         
-        # LLM SERVICE WITH OLLAMA (опционально)
+        # LLM SERVICE WITH OLLAMA 
         echo ""
         echo "=== Checking for Ollama build ==="
         if [ -f "config/llm-service/Dockerfile.ollama" ] || [ -f "config/Dockerfile.ollama" ]; then
