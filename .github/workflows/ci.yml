@@ -475,23 +475,23 @@ jobs:
     - name: Move config files to separate directory (чтобы не перезаписать другие checkout)
       run: |
         echo "Moving config files..."
-        # Если есть файлы в корне, перемещаем их в config-source/
+        # Если есть файлы в корне, перемещаем их в config/
         if [ -f "Dockerfile" ] || [ -f "Dockerfile.dev" ] || [ -d "frontend" ] || [ -d "backend" ]; then
-          mkdir -p config-source
-          mv * config-source/ 2>/dev/null || true
-          mv .* config-source/ 2>/dev/null || true
+          mkdir -p config
+          mv * config/ 2>/dev/null || true
+          mv .* config/ 2>/dev/null || true
         fi
         # Если уже есть config/config структура
         if [ -d "config" ]; then
-          if [ ! -d "config-source" ]; then
-            mkdir -p config-source
+          if [ ! -d "config" ]; then
+            mkdir -p config
           fi
-          mv config/* config-source/ 2>/dev/null || true
+          mv config/* config/ 2>/dev/null || true
           rm -rf config
         fi
         
         echo "Config files structure:"
-        find config-source -type f -name "Dockerfile*" | sort
+        find config -type f -name "Dockerfile*" | sort
 
     - name: Validate structure
       run: |
@@ -511,11 +511,11 @@ jobs:
           echo "    Files: $(find app/frontend -type f | wc -l) files found"
         fi
         
-        # Проверяем Dockerfile в config-source
-        if [ -f "config-source/frontend/Dockerfile.dev" ] || [ -f "config-source/frontend/Dockerfile" ]; then
-          echo "Dockerfile found in config-source/frontend/"
-        elif [ -f "config-source/Dockerfile.frontend" ] || [ -f "config-source/Dockerfile.dev" ]; then
-          echo "Dockerfile found in config-source/"
+        # Проверяем Dockerfile в config
+        if [ -f "config/frontend/Dockerfile.dev" ] || [ -f "config/frontend/Dockerfile" ]; then
+          echo "Dockerfile found in config/frontend/"
+        elif [ -f "config/Dockerfile.frontend" ] || [ -f "config/Dockerfile.dev" ]; then
+          echo "Dockerfile found in config/"
         else
           echo "No Dockerfile found for frontend"
           errors=$((errors + 1))
@@ -533,11 +533,11 @@ jobs:
           echo "    Files: $(find app/backend -type f | wc -l) files found"
         fi
         
-        # Проверяем Dockerfile в config-source
-        if [ -f "config-source/backend/Dockerfile.dev" ] || [ -f "config-source/backend/Dockerfile" ]; then
-          echo "Dockerfile found in config-source/backend/"
-        elif [ -f "config-source/Dockerfile.backend" ] || [ -f "config-source/Dockerfile.dev" ]; then
-          echo "Dockerfile found in config-source/"
+        # Проверяем Dockerfile в config
+        if [ -f "config/backend/Dockerfile.dev" ] || [ -f "config/backend/Dockerfile" ]; then
+          echo "Dockerfile found in config/backend/"
+        elif [ -f "config/Dockerfile.backend" ] || [ -f "config/Dockerfile.dev" ]; then
+          echo "Dockerfile found in config/"
         else
           echo "No Dockerfile found for backend"
           errors=$((errors + 1))
@@ -556,16 +556,16 @@ jobs:
         
         # Проверяем Dockerfile для LLM
         if [ -f "config/llm-service/Dockerfile" ] || [ -f "config/llm-service/Dockerfile.dev" ]; then
-          echo "Dockerfile found in config-source/llm-service/"
-        elif [ -f "config/Dockerfile" ] || [ -f "config-source/Dockerfile.dev" ]; then
-          echo "Dockerfile found in config-source/"
+          echo "Dockerfile found in config/llm-service/"
+        elif [ -f "config/Dockerfile" ] || [ -f "config/Dockerfile.dev" ]; then
+          echo "Dockerfile found in config/"
         else
           echo "No Dockerfile found for LLM service"
         fi
         
         echo ""
-        echo "=== Dockerfile discovery in config-source ==="
-        find config-source -name "Dockerfile*" -type f | sort
+        echo "=== Dockerfile discovery in config ==="
+        find config -name "Dockerfile*" -type f | sort
         
         echo ""
         echo "=== Summary: $errors critical errors ==="
@@ -588,29 +588,29 @@ jobs:
           cp -r app/frontend/* docker-context/frontend/ 2>/dev/null || echo "Note: Some frontend files could not be copied"
         fi
         
-        # Находим и копируем Dockerfile из config-source
-        if [ -f "config-source/frontend/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config-source/frontend/Dockerfile.dev"
-          cp config-source/frontend/Dockerfile.dev docker-context/frontend/Dockerfile
-        elif [ -f "config-source/frontend/Dockerfile" ]; then
-          echo "Using Dockerfile: config-source/frontend/Dockerfile"
-          cp config-source/frontend/Dockerfile docker-context/frontend/Dockerfile
-        elif [ -f "config-source/Dockerfile.frontend" ]; then
-          echo "Using Dockerfile: config-source/Dockerfile.frontend"
-          cp config-source/Dockerfile.frontend docker-context/frontend/Dockerfile
-        elif [ -f "config-source/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config-source/Dockerfile.dev"
-          cp config-source/Dockerfile.dev docker-context/frontend/Dockerfile
+        # Находим и копируем Dockerfile из config
+        if [ -f "config/frontend/Dockerfile.dev" ]; then
+          echo "Using Dockerfile: config/frontend/Dockerfile.dev"
+          cp config/frontend/Dockerfile.dev docker-context/frontend/Dockerfile
+        elif [ -f "config/frontend/Dockerfile" ]; then
+          echo "Using Dockerfile: config/frontend/Dockerfile"
+          cp config/frontend/Dockerfile docker-context/frontend/Dockerfile
+        elif [ -f "config/Dockerfile.frontend" ]; then
+          echo "Using Dockerfile: config/Dockerfile.frontend"
+          cp config/Dockerfile.frontend docker-context/frontend/Dockerfile
+        elif [ -f "config/Dockerfile.dev" ]; then
+          echo "Using Dockerfile: config/Dockerfile.dev"
+          cp config/Dockerfile.dev docker-context/frontend/Dockerfile
         else
           echo "ERROR: No Dockerfile found for frontend"
           exit 1
         fi
         
         # Копируем package.json если есть
-        if [ -f "config-source/frontend/package.json" ]; then
-          cp config-source/frontend/package*.json docker-context/frontend/ 2>/dev/null || true
-        elif [ -f "config-source/package.json" ]; then
-          cp config-source/package*.json docker-context/frontend/ 2>/dev/null || true
+        if [ -f "config/frontend/package.json" ]; then
+          cp config/frontend/package*.json docker-context/frontend/ 2>/dev/null || true
+        elif [ -f "config/package.json" ]; then
+          cp config/package*.json docker-context/frontend/ 2>/dev/null || true
         fi
         
         echo "Frontend context ready. Files: $(find docker-context/frontend -type f | wc -l)"
@@ -625,29 +625,29 @@ jobs:
           cp -r app/backend/* docker-context/backend/ 2>/dev/null || echo "Note: Some backend files could not be copied"
         fi
         
-        # Находим и копируем Dockerfile из config-source
-        if [ -f "config-source/backend/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config-source/backend/Dockerfile.dev"
-          cp config-source/backend/Dockerfile.dev docker-context/backend/Dockerfile
-        elif [ -f "config-source/backend/Dockerfile" ]; then
-          echo "Using Dockerfile: config-source/backend/Dockerfile"
-          cp config-source/backend/Dockerfile docker-context/backend/Dockerfile
-        elif [ -f "config-source/Dockerfile.backend" ]; then
-          echo "Using Dockerfile: config-source/Dockerfile.backend"
-          cp config-source/Dockerfile.backend docker-context/backend/Dockerfile
-        elif [ -f "config-source/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config-source/Dockerfile.dev"
-          cp config-source/Dockerfile.dev docker-context/backend/Dockerfile
+        # Находим и копируем Dockerfile из config
+        if [ -f "config/backend/Dockerfile.dev" ]; then
+          echo "Using Dockerfile: config/backend/Dockerfile.dev"
+          cp config/backend/Dockerfile.dev docker-context/backend/Dockerfile
+        elif [ -f "config/backend/Dockerfile" ]; then
+          echo "Using Dockerfile: config/backend/Dockerfile"
+          cp config/backend/Dockerfile docker-context/backend/Dockerfile
+        elif [ -f "config/Dockerfile.backend" ]; then
+          echo "Using Dockerfile: config/Dockerfile.backend"
+          cp config/Dockerfile.backend docker-context/backend/Dockerfile
+        elif [ -f "config/Dockerfile.dev" ]; then
+          echo "Using Dockerfile: config/Dockerfile.dev"
+          cp config/Dockerfile.dev docker-context/backend/Dockerfile
         else
           echo "ERROR: No Dockerfile found for backend"
           exit 1
         fi
         
         # Копируем requirements.txt
-        if [ -f "config-source/backend/requirements.txt" ]; then
-          cp config-source/backend/requirements.txt docker-context/backend/
-        elif [ -f "config-source/requirements.txt" ]; then
-          cp config-source/requirements.txt docker-context/backend/
+        if [ -f "config/backend/requirements.txt" ]; then
+          cp config/backend/requirements.txt docker-context/backend/
+        elif [ -f "config/requirements.txt" ]; then
+          cp config/requirements.txt docker-context/backend/
         else
           echo "WARNING: No requirements.txt found for backend"
         fi
@@ -664,29 +664,29 @@ jobs:
           cp -r model/* docker-context/llm-service/ 2>/dev/null || echo "Note: Some model files could not be copied"
         fi
         
-        # Находим и копируем Dockerfile из config-source
-        if [ -f "config-source/llm-service/Dockerfile" ]; then
-          echo "Using Dockerfile: config-source/llm-service/Dockerfile"
-          cp config-source/llm-service/Dockerfile docker-context/llm-service/Dockerfile
-        elif [ -f "config-source/llm-service/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config-source/llm-service/Dockerfile.dev"
-          cp config-source/llm-service/Dockerfile.dev docker-context/llm-service/Dockerfile
-        elif [ -f "config-source/Dockerfile" ]; then
-          echo "Using Dockerfile: config-source/Dockerfile"
-          cp config-source/Dockerfile docker-context/llm-service/Dockerfile
-        elif [ -f "config-source/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config-source/Dockerfile.dev"
-          cp config-source/Dockerfile.dev docker-context/llm-service/Dockerfile
+        # Находим и копируем Dockerfile из config
+        if [ -f "config/llm-service/Dockerfile" ]; then
+          echo "Using Dockerfile: config/llm-service/Dockerfile"
+          cp config/llm-service/Dockerfile docker-context/llm-service/Dockerfile
+        elif [ -f "config/llm-service/Dockerfile.dev" ]; then
+          echo "Using Dockerfile: config/llm-service/Dockerfile.dev"
+          cp config/llm-service/Dockerfile.dev docker-context/llm-service/Dockerfile
+        elif [ -f "config/Dockerfile" ]; then
+          echo "Using Dockerfile: config/Dockerfile"
+          cp config/Dockerfile docker-context/llm-service/Dockerfile
+        elif [ -f "config/Dockerfile.dev" ]; then
+          echo "Using Dockerfile: config/Dockerfile.dev"
+          cp config/Dockerfile.dev docker-context/llm-service/Dockerfile
         else
           echo "ERROR: No Dockerfile found for LLM service"
           exit 1
         fi
         
         # Копируем requirements.txt
-        if [ -f "config-source/llm-service/requirements.txt" ]; then
-          cp config-source/llm-service/requirements.txt docker-context/llm-service/
-        elif [ -f "config-source/requirements.txt" ]; then
-          cp config-source/requirements.txt docker-context/llm-service/
+        if [ -f "config/llm-service/requirements.txt" ]; then
+          cp config/llm-service/requirements.txt docker-context/llm-service/
+        elif [ -f "config/requirements.txt" ]; then
+          cp config/requirements.txt docker-context/llm-service/
         else
           echo "WARNING: No requirements.txt found for LLM service"
         fi
@@ -696,7 +696,7 @@ jobs:
         # LLM SERVICE WITH OLLAMA (опционально)
         echo ""
         echo "=== Checking for Ollama build ==="
-        if [ -f "config-source/llm-service/Dockerfile.ollama" ] || [ -f "config-source/Dockerfile.ollama" ]; then
+        if [ -f "config/llm-service/Dockerfile.ollama" ] || [ -f "config/Dockerfile.ollama" ]; then
           echo "Preparing LLM Service (Ollama) context..."
           mkdir -p docker-context/llm-ollama
           
@@ -706,19 +706,19 @@ jobs:
           fi
           
           # Копируем Ollama Dockerfile
-          if [ -f "config-source/llm-service/Dockerfile.ollama" ]; then
-            echo "Using Dockerfile: config-source/llm-service/Dockerfile.ollama"
-            cp config-source/llm-service/Dockerfile.ollama docker-context/llm-ollama/Dockerfile
-          elif [ -f "config-source/Dockerfile.ollama" ]; then
-            echo "Using Dockerfile: config-source/Dockerfile.ollama"
-            cp config-source/Dockerfile.ollama docker-context/llm-ollama/Dockerfile
+          if [ -f "config/llm-service/Dockerfile.ollama" ]; then
+            echo "Using Dockerfile: config/llm-service/Dockerfile.ollama"
+            cp config/llm-service/Dockerfile.ollama docker-context/llm-ollama/Dockerfile
+          elif [ -f "config/Dockerfile.ollama" ]; then
+            echo "Using Dockerfile: config/Dockerfile.ollama"
+            cp config/Dockerfile.ollama docker-context/llm-ollama/Dockerfile
           fi
           
           # Копируем requirements.txt
-          if [ -f "config-source/llm-service/requirements.txt" ]; then
-            cp config-source/llm-service/requirements.txt docker-context/llm-ollama/
-          elif [ -f "config-source/requirements.txt" ]; then
-            cp config-source/requirements.txt docker-context/llm-ollama/
+          if [ -f "config/llm-service/requirements.txt" ]; then
+            cp config/llm-service/requirements.txt docker-context/llm-ollama/
+          elif [ -f "config/requirements.txt" ]; then
+            cp config/requirements.txt docker-context/llm-ollama/
           fi
           
           echo "LLM Ollama context ready. Files: $(find docker-context/llm-ollama -type f | wc -l)"
@@ -860,31 +860,31 @@ jobs:
             # Определяем исходный файл
             case $service in
               frontend)
-                if [ -f "config-source/frontend/Dockerfile.dev" ]; then
-                  source_file="config-source/frontend/Dockerfile.dev"
-                elif [ -f "config-source/frontend/Dockerfile" ]; then
-                  source_file="config-source/frontend/Dockerfile"
+                if [ -f "config/frontend/Dockerfile.dev" ]; then
+                  source_file="config/frontend/Dockerfile.dev"
+                elif [ -f "config/frontend/Dockerfile" ]; then
+                  source_file="config/frontend/Dockerfile"
                 fi
                 ;;
               backend)
-                if [ -f "config-source/backend/Dockerfile.dev" ]; then
-                  source_file="config-source/backend/Dockerfile.dev"
-                elif [ -f "config-source/backend/Dockerfile" ]; then
-                  source_file="config-source/backend/Dockerfile"
+                if [ -f "config/backend/Dockerfile.dev" ]; then
+                  source_file="config/backend/Dockerfile.dev"
+                elif [ -f "config/backend/Dockerfile" ]; then
+                  source_file="config/backend/Dockerfile"
                 fi
                 ;;
               llm-service)
-                if [ -f "config-source/llm-service/Dockerfile" ]; then
-                  source_file="config-source/llm-service/Dockerfile"
-                elif [ -f "config-source/llm-service/Dockerfile.dev" ]; then
-                  source_file="config-source/llm-service/Dockerfile.dev"
+                if [ -f "config/llm-service/Dockerfile" ]; then
+                  source_file="config/llm-service/Dockerfile"
+                elif [ -f "config/llm-service/Dockerfile.dev" ]; then
+                  source_file="config/llm-service/Dockerfile.dev"
                 fi
                 ;;
               llm-ollama)
-                if [ -f "config-source/llm-service/Dockerfile.ollama" ]; then
-                  source_file="config-source/llm-service/Dockerfile.ollama"
-                elif [ -f "config-source/Dockerfile.ollama" ]; then
-                  source_file="config-source/Dockerfile.ollama"
+                if [ -f "config/llm-service/Dockerfile.ollama" ]; then
+                  source_file="config/llm-service/Dockerfile.ollama"
+                elif [ -f "config/Dockerfile.ollama" ]; then
+                  source_file="config/Dockerfile.ollama"
                 fi
                 ;;
             esac
