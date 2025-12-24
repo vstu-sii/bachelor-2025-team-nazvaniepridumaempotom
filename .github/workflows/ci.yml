@@ -76,7 +76,7 @@ jobs:
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
-    if: contains(github.ref, 'fullstackkk') || contains(github.ref, 'main') || contains(github.ref, 'develop') || contains(github.ref, 'backend')
+    if: contains(github.ref, 'fullstackkk') || contains(github.ref, 'main') || contains(github.ref, 'MLOPS')
     
     steps:
     - name: Checkout code
