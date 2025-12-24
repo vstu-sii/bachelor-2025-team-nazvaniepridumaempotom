@@ -448,453 +448,405 @@ jobs:
         EOF  
         python test_ollama_integration.py
   build-docker:
-    name: Build Docker Images
-    runs-on: ubuntu-latest
-    needs: [test-frontend, test-backend, test-llm-service]
-    if: github.event_name != 'pull_request'
-    
-    steps:
-    - name: Checkout app code (fullstack branch)
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ env.APP_BRANCH }}
-        path: app
+  name: Build Docker Images
+  runs-on: ubuntu-latest
+  needs: [test-frontend, test-backend, test-llm-service]
+  if: github.event_name != 'pull_request'
+  
+  steps:
+  - name: Checkout app code (fullstack branch)
+    uses: actions/checkout@v4
+    with:
+      ref: ${{ env.APP_BRANCH }}
+      path: app-code
 
-    - name: Checkout model code (d2-ai branch)
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ env.MODEL_BRANCH }}
-        path: model
+  - name: Checkout model code (d2-ai branch)
+    uses: actions/checkout@v4
+    with:
+      ref: ${{ env.MODEL_BRANCH }}
+      path: model-code
 
-    - name: Checkout config files 
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ env.CONFIG_BRANCH }}
-      # УБИРАЕМ path: config - файлы будут в корне
+  - name: Checkout config files 
+    uses: actions/checkout@v4
+    with:
+      ref: ${{ env.CONFIG_BRANCH }}
+      path: config
 
-    - name: Move config files to separate directory (чтобы не перезаписать другие checkout)
-      run: |
-        echo "Moving config files..."
-        # Если есть файлы в корне, перемещаем их в config/
-        if [ -f "Dockerfile" ] || [ -f "Dockerfile.dev" ] || [ -d "frontend" ] || [ -d "backend" ]; then
-          mkdir -p config
-          mv * config/ 2>/dev/null || true
-          mv .* config/ 2>/dev/null || true
-        fi
-        # Если уже есть config/config структура
-        if [ -d "config" ]; then
-          if [ ! -d "config" ]; then
-            mkdir -p config
-          fi
-          mv config/* config/ 2>/dev/null || true
-          rm -rf config
-        fi
-        
-        echo "Config files structure:"
-        find config -type f -name "Dockerfile*" | sort
+  - name: Debug directory structure
+    run: |
+      echo "=== Directory structure ==="
+      echo ""
+      echo "app-code (fullstack branch):"
+      find app-code -type f -name "*.py" -o -name "*.js" -o -name "*.json" | head -20 || echo "No files found"
+      echo ""
+      echo "model-code (d2-ai branch):"
+      find model-code -type f -name "*.py" -o -name "*.txt" -o -name "*.json" | head -20 || echo "No files found"
+      echo ""
+      echo "config (config branch):"
+      find config -type f -name "Dockerfile*" -o -name "requirements*" -o -name "package*" | sort || echo "No files found"
 
-    - name: Validate structure
-      run: |
-        echo "=== Validating project structure ==="
-        echo ""
-        
-        # Проверяем наличие критических файлов
-        errors=0
-        
-        # 1. Проверяем frontend
-        echo "Frontend:"
-        if [ ! -d "app/frontend" ]; then
-          echo "app/frontend directory not found"
-          errors=$((errors + 1))
-        else
-          echo "app/frontend directory exists"
-          echo "    Files: $(find app/frontend -type f | wc -l) files found"
-        fi
-        
-        # Проверяем Dockerfile.dev в config
-        if [ -f "config/frontend/Dockerfile.dev" ] || [ -f "config/frontend/Dockerfile" ]; then
-          echo "Dockerfile.dev found in config/frontend/"
-        elif [ -f "config/Dockerfile.frontend" ] || [ -f "config/Dockerfile.dev" ]; then
-          echo "Dockerfile.dev found in config/"
-        else
-          echo "No Dockerfile.dev found for frontend"
-          errors=$((errors + 1))
-        fi
-        
-        echo ""
-        
-        # 2. Проверяем backend
-        echo "Backend:"
-        if [ ! -d "app/backend" ]; then
-          echo "app/backend directory not found"
-          errors=$((errors + 1))
-        else
-          echo "app/backend directory exists"
-          echo "    Files: $(find app/backend -type f | wc -l) files found"
-        fi
-        
-        # Проверяем Dockerfile.dev в config
-        if [ -f "config/backend/Dockerfile.dev" ] || [ -f "config/backend/Dockerfile" ]; then
-          echo "Dockerfile.dev found in config/backend/"
-        elif [ -f "config/Dockerfile.backend" ] || [ -f "config/Dockerfile.dev" ]; then
-          echo "Dockerfile.dev found in config/"
-        else
-          echo "No Dockerfile.dev found for backend"
-          errors=$((errors + 1))
-        fi
-        
-        echo ""
-        
-        # 3. Проверяем LLM service
-        echo "LLM Service:"
-        if [ ! -d "model" ]; then
-          echo " model directory not found (may be expected for some branches)"
-        else
-          echo "model directory exists"
-          echo "    Files: $(find model -type f | wc -l) files found"
-        fi
-        
-        # Проверяем Dockerfile.dev для LLM
-        if [ -f "config/llm-service/Dockerfile" ] || [ -f "config/llm-service/Dockerfile.dev" ]; then
-          echo "Dockerfile.dev found in config/llm-service/"
-        elif [ -f "config/Dockerfile" ] || [ -f "config/Dockerfile.dev" ]; then
-          echo "Dockerfile.dev found in config/"
-        else
-          echo "No Dockerfile.dev found for LLM service"
-        fi
-        
-        echo ""
-        echo "=== Dockerfile.dev discovery in config ==="
-        find config -name "Dockerfile*" -type f | sort
-        
-        echo ""
-        echo "=== Summary: $errors critical errors ==="
-        
-        if [ $errors -gt 0 ]; then
-          echo "Critical validation errors found. Check the structure above."
-          exit 1
-        fi
+  - name: Validate structure
+    run: |
+      echo "=== Validating project structure ==="
+      echo ""
+      
+      errors=0
+      
+      # 1. Проверяем frontend
+      echo "Frontend:"
+      if [ -d "app-code/frontend" ]; then
+        echo "  ✅ Frontend code found in app-code/frontend/"
+        echo "    Files: $(find app-code/frontend -type f | wc -l) files"
+      else
+        echo "  ❌ Frontend code not found in app-code/frontend/"
+        errors=$((errors + 1))
+      fi
+      
+      if [ -f "config/frontend/Dockerfile.dev" ]; then
+        echo "  ✅ Dockerfile.dev found in config/frontend/"
+      elif [ -f "config/frontend/Dockerfile" ]; then
+        echo "  ✅ Dockerfile found in config/frontend/"
+      else
+        echo "  ❌ No Dockerfile found in config/frontend/"
+        errors=$((errors + 1))
+      fi
+      
+      echo ""
+      
+      # 2. Проверяем backend
+      echo "Backend:"
+      if [ -d "app-code/backend" ]; then
+        echo "  ✅ Backend code found in app-code/backend/"
+        echo "    Files: $(find app-code/backend -type f | wc -l) files"
+      else
+        echo "  ❌ Backend code not found in app-code/backend/"
+        errors=$((errors + 1))
+      fi
+      
+      if [ -f "config/backend/Dockerfile.dev" ]; then
+        echo "  ✅ Dockerfile.dev found in config/backend/"
+      elif [ -f "config/backend/Dockerfile" ]; then
+        echo "  ✅ Dockerfile found in config/backend/"
+      else
+        echo "  ❌ No Dockerfile found in config/backend/"
+        errors=$((errors + 1))
+      fi
+      
+      echo ""
+      
+      # 3. Проверяем LLM service
+      echo "LLM Service:"
+      if [ -d "model-code" ]; then
+        echo "  ✅ LLM code found in model-code/"
+        echo "    Files: $(find model-code -type f | wc -l) files"
+      else
+        echo "  ⚠️  LLM code not found in model-code/"
+      fi
+      
+      if [ -f "config/llm-service/Dockerfile" ]; then
+        echo "  ✅ Dockerfile found in config/llm-service/"
+      elif [ -f "config/llm-service/Dockerfile.dev" ]; then
+        echo "  ✅ Dockerfile.dev found in config/llm-service/"
+      elif [ -f "config/Dockerfile" ]; then
+        echo "  ✅ Dockerfile found in config/"
+      else
+        echo "  ⚠️  No Dockerfile found for LLM service"
+      fi
+      
+      echo ""
+      echo "=== All Dockerfiles in config ==="
+      find config -name "Dockerfile*" -type f | sort
+      
+      echo ""
+      echo "=== Summary: $errors critical errors ==="
+      
+      if [ $errors -gt 0 ]; then
+        echo "❌ Critical validation errors found."
+        exit 1
+      fi
 
-    - name: Prepare Docker build contexts
-      run: |
-        echo "Preparing Docker build contexts..."
-        
-        # FRONTEND
-        echo "=== Preparing Frontend context ==="
-        mkdir -p docker-context/frontend
-        
-        # Копируем код из ветки fullstack
-        if [ -d "app/frontend" ]; then
-          cp -r app/frontend/* docker-context/frontend/ 2>/dev/null || echo "Note: Some frontend files could not be copied"
-        fi
-        
-        # Находим и копируем Dockerfile.dev из config
-        if [ -f "config/frontend/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config/frontend/Dockerfile.dev"
-          cp config/frontend/Dockerfile.dev docker-context/frontend/Dockerfile
-        elif [ -f "config/frontend/Dockerfile" ]; then
-          echo "Using Dockerfile: config/frontend/Dockerfile"
-          cp config/frontend/Dockerfile.dev docker-context/frontend/Dockerfile
-        elif [ -f "config/Dockerfile.frontend" ]; then
-          echo "Using Dockerfile: config/Dockerfile.frontend"
-          cp config/Dockerfile.frontend docker-context/frontend/Dockerfile
-        elif [ -f "config/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config/Dockerfile.dev"
-          cp config/Dockerfile.dev docker-context/frontend/Dockerfile
-        else
-          echo "ERROR: No Dockerfile.dev found for frontend"
-          exit 1
-        fi
-        
-        # Копируем package.json если есть
-        if [ -f "config/frontend/package.json" ]; then
-          cp config/frontend/package*.json docker-context/frontend/ 2>/dev/null || true
-        elif [ -f "config/package.json" ]; then
-          cp config/package*.json docker-context/frontend/ 2>/dev/null || true
-        fi
-        
-        echo "Frontend context ready. Files: $(find docker-context/frontend -type f | wc -l)"
-        
-        # BACKEND
-        echo ""
-        echo "=== Preparing Backend context ==="
-        mkdir -p docker-context/backend
-        
-        # Копируем код из ветки fullstack
-        if [ -d "app/backend" ]; then
-          cp -r app/backend/* docker-context/backend/ 2>/dev/null || echo "Note: Some backend files could not be copied"
-        fi
-        
-        # Находим и копируем Dockerfile.dev из config
-        if [ -f "config/backend/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config/backend/Dockerfile.dev"
-          cp config/backend/Dockerfile.dev docker-context/backend/Dockerfile
-        elif [ -f "config/backend/Dockerfile" ]; then
-          echo "Using Dockerfile: config/backend/Dockerfile"
-          cp config/backend/Dockerfile.dev docker-context/backend/Dockerfile
-        elif [ -f "config/Dockerfile.backend" ]; then
-          echo "Using Dockerfile: config/Dockerfile.backend"
-          cp config/Dockerfile.backend docker-context/backend/Dockerfile
-        elif [ -f "config/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config/Dockerfile.dev"
-          cp config/Dockerfile.dev docker-context/backend/Dockerfile
-        else
-          echo "ERROR: No Dockerfile.dev found for backend"
-          exit 1
-        fi
-        
-        # Копируем requirements.txt
-        if [ -f "config/backend/requirements.txt" ]; then
-          cp config/backend/requirements.txt docker-context/backend/
-        elif [ -f "config/requirements.txt" ]; then
-          cp config/requirements.txt docker-context/backend/
-        else
-          echo "WARNING: No requirements.txt found for backend"
-        fi
-        
-        echo "Backend context ready. Files: $(find docker-context/backend -type f | wc -l)"
-        
-        # LLM SERVICE
-        echo ""
-        echo "=== Preparing LLM Service context ==="
-        mkdir -p docker-context/llm-service
+  - name: Prepare Docker build contexts
+    run: |
+      echo "Preparing Docker build contexts..."
+      
+      # FRONTEND
+      echo "=== Preparing Frontend context ==="
+      mkdir -p docker-context/frontend
+      
+      # Копируем код из ветки fullstack
+      if [ -d "app-code/frontend" ]; then
+        echo "Copying frontend code from app-code/frontend/"
+        cp -r app-code/frontend/* docker-context/frontend/ 2>/dev/null || echo "Note: Some files could not be copied"
+      fi
+      
+      # Копируем Dockerfile из ветки config
+      if [ -f "config/frontend/Dockerfile.dev" ]; then
+        echo "Using Dockerfile: config/frontend/Dockerfile.dev"
+        cp config/frontend/Dockerfile.dev docker-context/frontend/Dockerfile
+      elif [ -f "config/frontend/Dockerfile" ]; then
+        echo "Using Dockerfile: config/frontend/Dockerfile"
+        cp config/frontend/Dockerfile docker-context/frontend/Dockerfile
+      else
+        echo "ERROR: No Dockerfile found for frontend"
+        exit 1
+      fi
+      
+      # Копируем package.json если есть
+      if [ -f "config/frontend/package.json" ]; then
+        echo "Copying package.json from config/frontend/"
+        cp config/frontend/package*.json docker-context/frontend/ 2>/dev/null || true
+      fi
+      
+      echo "Frontend context: $(find docker-context/frontend -type f | wc -l) files"
+      
+      # BACKEND
+      echo ""
+      echo "=== Preparing Backend context ==="
+      mkdir -p docker-context/backend
+      
+      # Копируем код из ветки fullstack
+      if [ -d "app-code/backend" ]; then
+        echo "Copying backend code from app-code/backend/"
+        cp -r app-code/backend/* docker-context/backend/ 2>/dev/null || echo "Note: Some files could not be copied"
+      fi
+      
+      # Копируем Dockerfile из ветки config
+      if [ -f "config/backend/Dockerfile.dev" ]; then
+        echo "Using Dockerfile: config/backend/Dockerfile.dev"
+        cp config/backend/Dockerfile.dev docker-context/backend/Dockerfile
+      elif [ -f "config/backend/Dockerfile" ]; then
+        echo "Using Dockerfile: config/backend/Dockerfile"
+        cp config/backend/Dockerfile docker-context/backend/Dockerfile
+      else
+        echo "ERROR: No Dockerfile found for backend"
+        exit 1
+      fi
+      
+      # Копируем requirements.txt
+      if [ -f "config/backend/requirements.txt" ]; then
+        echo "Copying requirements.txt from config/backend/"
+        cp config/backend/requirements.txt docker-context/backend/
+      elif [ -f "config/requirements.txt" ]; then
+        echo "Copying requirements.txt from config/"
+        cp config/requirements.txt docker-context/backend/
+      else
+        echo "WARNING: No requirements.txt found"
+      fi
+      
+      echo "Backend context: $(find docker-context/backend -type f | wc -l) files"
+      
+      # LLM SERVICE
+      echo ""
+      echo "=== Preparing LLM Service context ==="
+      mkdir -p docker-context/llm-service
+      
+      # Копируем код из ветки d2-ai
+      if [ -d "model-code" ]; then
+        echo "Copying LLM code from model-code/"
+        cp -r model-code/* docker-context/llm-service/ 2>/dev/null || echo "Note: Some files could not be copied"
+      fi
+      
+      # Копируем Dockerfile из ветки config
+      if [ -f "config/llm-service/Dockerfile" ]; then
+        echo "Using Dockerfile: config/llm-service/Dockerfile"
+        cp config/llm-service/Dockerfile docker-context/llm-service/Dockerfile
+      elif [ -f "config/llm-service/Dockerfile.dev" ]; then
+        echo "Using Dockerfile: config/llm-service/Dockerfile.dev"
+        cp config/llm-service/Dockerfile.dev docker-context/llm-service/Dockerfile
+      elif [ -f "config/Dockerfile" ]; then
+        echo "Using Dockerfile: config/Dockerfile"
+        cp config/Dockerfile docker-context/llm-service/Dockerfile
+      else
+        echo "ERROR: No Dockerfile found for LLM service"
+        exit 1
+      fi
+      
+      # Копируем requirements.txt
+      if [ -f "config/llm-service/requirements.txt" ]; then
+        echo "Copying requirements.txt from config/llm-service/"
+        cp config/llm-service/requirements.txt docker-context/llm-service/
+      elif [ -f "config/requirements.txt" ]; then
+        echo "Copying requirements.txt from config/"
+        cp config/requirements.txt docker-context/llm-service/
+      else
+        echo "WARNING: No requirements.txt found"
+      fi
+      
+      echo "LLM Service context: $(find docker-context/llm-service -type f | wc -l) files"
+      
+      # LLM SERVICE WITH OLLAMA (опционально)
+      echo ""
+      echo "=== Checking for Ollama build ==="
+      if [ -f "config/llm-service/Dockerfile.ollama" ] || [ -f "config/Dockerfile.ollama" ]; then
+        echo "Preparing LLM Service (Ollama) context..."
+        mkdir -p docker-context/llm-ollama
         
         # Копируем код из ветки d2-ai
-        if [ -d "model" ]; then
-          cp -r model/* docker-context/llm-service/ 2>/dev/null || echo "Note: Some model files could not be copied"
+        if [ -d "model-code" ]; then
+          cp -r model-code/* docker-context/llm-ollama/ 2>/dev/null || echo "Note: Some files could not be copied"
         fi
         
-        # Находим и копируем Dockerfile.dev из config
-        if [ -f "config/llm-service/Dockerfile" ]; then
-          echo "Using Dockerfile: config/llm-service/Dockerfile"
-          cp config/llm-service/Dockerfile.dev docker-context/llm-service/Dockerfile
-        elif [ -f "config/llm-service/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config/llm-service/Dockerfile.dev"
-          cp config/llm-service/Dockerfile.dev docker-context/llm-service/Dockerfile
-        elif [ -f "config/Dockerfile" ]; then
-          echo "Using Dockerfile: config/Dockerfile"
-          cp config/Dockerfile.dev docker-context/llm-service/Dockerfile
-        elif [ -f "config/Dockerfile.dev" ]; then
-          echo "Using Dockerfile: config/Dockerfile.dev"
-          cp config/Dockerfile.dev docker-context/llm-service/Dockerfile
-        else
-          echo "ERROR: No Dockerfile.dev found for LLM service"
-          exit 1
+        # Копируем Ollama Dockerfile
+        if [ -f "config/llm-service/Dockerfile.ollama" ]; then
+          echo "Using Dockerfile: config/llm-service/Dockerfile.ollama"
+          cp config/llm-service/Dockerfile.ollama docker-context/llm-ollama/Dockerfile
+        elif [ -f "config/Dockerfile.ollama" ]; then
+          echo "Using Dockerfile: config/Dockerfile.ollama"
+          cp config/Dockerfile.ollama docker-context/llm-ollama/Dockerfile
         fi
         
         # Копируем requirements.txt
         if [ -f "config/llm-service/requirements.txt" ]; then
-          cp config/llm-service/requirements.txt docker-context/llm-service/
+          cp config/llm-service/requirements.txt docker-context/llm-ollama/
         elif [ -f "config/requirements.txt" ]; then
-          cp config/requirements.txt docker-context/llm-service/
-        else
-          echo "WARNING: No requirements.txt found for LLM service"
+          cp config/requirements.txt docker-context/llm-ollama/
         fi
         
-        echo "LLM Service context ready. Files: $(find docker-context/llm-service -type f | wc -l)"
-        
-        # LLM SERVICE WITH OLLAMA (опционально)
-        echo ""
-        echo "=== Checking for Ollama build ==="
-        if [ -f "config/llm-service/Dockerfile.ollama" ] || [ -f "config/Dockerfile.ollama" ]; then
-          echo "Preparing LLM Service (Ollama) context..."
-          mkdir -p docker-context/llm-ollama
-          
-          # Копируем код из ветки d2-ai
-          if [ -d "model" ]; then
-            cp -r model/* docker-context/llm-ollama/ 2>/dev/null || echo "Note: Some model files could not be copied"
-          fi
-          
-          # Копируем Ollama Dockerfile
-          if [ -f "config/llm-service/Dockerfile.ollama" ]; then
-            echo "Using Dockerfile: config/llm-service/Dockerfile.ollama"
-            cp config/llm-service/Dockerfile.ollama docker-context/llm-ollama/Dockerfile
-          elif [ -f "config/Dockerfile.ollama" ]; then
-            echo "Using Dockerfile: config/Dockerfile.ollama"
-            cp config/Dockerfile.ollama docker-context/llm-ollama/Dockerfile
-          fi
-          
-          # Копируем requirements.txt
-          if [ -f "config/llm-service/requirements.txt" ]; then
-            cp config/llm-service/requirements.txt docker-context/llm-ollama/
-          elif [ -f "config/requirements.txt" ]; then
-            cp config/requirements.txt docker-context/llm-ollama/
-          fi
-          
-          echo "LLM Ollama context ready. Files: $(find docker-context/llm-ollama -type f | wc -l)"
-        else
-          echo "No Ollama Dockerfile.dev found, skipping Ollama build"
-        fi
-        
-        echo ""
-        echo "=== Final context structure ==="
-        echo "Total size:"
-        du -sh docker-context
-        echo ""
-        echo "Per service:"
-        for service in frontend backend llm-service llm-ollama; do
-          if [ -d "docker-context/$service" ]; then
-            echo "- $service: $(du -sh docker-context/$service | cut -f1) ($(find docker-context/$service -type f | wc -l) files)"
-          fi
-        done
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and push Frontend
-      if: hashFiles('docker-context/frontend/Dockerfile')
-      uses: docker/build-push-action@v5
-      with:
-        context: ./docker-context/frontend
-        file: ./docker-context/frontend/Dockerfile
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:app-${{ env.APP_BRANCH }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        build-args: |
-          BRANCH_SOURCE=${{ env.APP_BRANCH }}
-          CONFIG_SOURCE=${{ env.CONFIG_BRANCH }}
-
-    - name: Build and push Backend
-      if: hashFiles('docker-context/backend/Dockerfile')
-      uses: docker/build-push-action@v5
-      with:
-        context: ./docker-context/backend
-        file: ./docker-context/backend/Dockerfile
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:latest
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:app-${{ env.APP_BRANCH }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        build-args: |
-          BRANCH_SOURCE=${{ env.APP_BRANCH }}
-          CONFIG_SOURCE=${{ env.CONFIG_BRANCH }}
-
-    - name: Build and push LLM Service
-      if: hashFiles('docker-context/llm-service/Dockerfile')
-      uses: docker/build-push-action@v5
-      with:
-        context: ./docker-context/llm-service
-        file: ./docker-context/llm-service/Dockerfile
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:latest
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:model-${{ env.MODEL_BRANCH }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        build-args: |
-          BRANCH_SOURCE=${{ env.MODEL_BRANCH }}
-          CONFIG_SOURCE=${{ env.CONFIG_BRANCH }}
-
-    - name: Build and push LLM Service (with Ollama)
-      if: |
-        hashFiles('docker-context/llm-ollama/Dockerfile') &&
-        (github.ref == 'refs/heads/d2-ai' || github.ref == 'refs/heads/main')
-      uses: docker/build-push-action@v5
-      with:
-        context: ./docker-context/llm-ollama
-        file: ./docker-context/llm-ollama/Dockerfile
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:ollama-latest
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:ollama-${{ github.sha }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:model-${{ env.MODEL_BRANCH }}-ollama
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        platforms: linux/amd64
-        build-args: |
-          BRANCH_SOURCE=${{ env.MODEL_BRANCH }}
-          CONFIG_SOURCE=${{ env.CONFIG_BRANCH }}
-
-    - name: Create build summary
-      if: always()
-      run: |
-        echo "##Docker Build Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "**Build time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        echo "###Successfully built:" >> $GITHUB_STEP_SUMMARY
-        
-        if hashFiles('docker-context/frontend/Dockerfile'); then
-          echo "- **Frontend**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if hashFiles('docker-context/backend/Dockerfile'); then
-          echo "- **Backend**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if hashFiles('docker-context/llm-service/Dockerfile'); then
-          echo "- **LLM Service**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if hashFiles('docker-context/llm-ollama/Dockerfile') && ([[ "${{ github.ref }}" == "refs/heads/d2-ai" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]); then
-          echo "- **LLM Service (with Ollama)**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:ollama-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🌿 Source Branches:" >> $GITHUB_STEP_SUMMARY
-        echo "- Frontend/Backend: \`${{ env.APP_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- LLM Service: \`${{ env.MODEL_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- Config: \`${{ env.CONFIG_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📂 Dockerfile.dev Sources:" >> $GITHUB_STEP_SUMMARY
-        for service in frontend backend llm-service llm-ollama; do
-          if [ -f "docker-context/$service/Dockerfile" ]; then
-            source_file=""
-            # Определяем исходный файл
-            case $service in
-              frontend)
-                if [ -f "config/frontend/Dockerfile.dev" ]; then
-                  source_file="config/frontend/Dockerfile.dev"
-                elif [ -f "config/frontend/Dockerfile" ]; then
-                  source_file="config/frontend/Dockerfile"
-                fi
-                ;;
-              backend)
-                if [ -f "config/backend/Dockerfile.dev" ]; then
-                  source_file="config/backend/Dockerfile.dev"
-                elif [ -f "config/backend/Dockerfile" ]; then
-                  source_file="config/backend/Dockerfile"
-                fi
-                ;;
-              llm-service)
-                if [ -f "config/llm-service/Dockerfile" ]; then
-                  source_file="config/llm-service/Dockerfile"
-                elif [ -f "config/llm-service/Dockerfile.dev" ]; then
-                  source_file="config/llm-service/Dockerfile.dev"
-                fi
-                ;;
-              llm-ollama)
-                if [ -f "config/llm-service/Dockerfile.ollama" ]; then
-                  source_file="config/llm-service/Dockerfile.ollama"
-                elif [ -f "config/Dockerfile.ollama" ]; then
-                  source_file="config/Dockerfile.ollama"
-                fi
-                ;;
-            esac
-            
-            if [ -n "$source_file" ]; then
-              echo "- **$service**: \`$source_file\`" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- **$service**: Generated" >> $GITHUB_STEP_SUMMARY
-            fi
-          fi
-        done
-
+        echo "LLM Ollama context: $(find docker-context/llm-ollama -type f | wc -l) files"
+      else
+        echo "No Ollama Dockerfile found, skipping Ollama build"
+      fi
       
+      echo ""
+      echo "=== Final context summary ==="
+      for dir in docker-context/*/; do
+        if [ -d "$dir" ]; then
+          service=$(basename "$dir")
+          echo "- $service: $(find "$dir" -type f | wc -l) files"
+        fi
+      done
+
+  - name: Set up Docker Buildx
+    uses: docker/setup-buildx-action@v3
+
+  - name: Log in to Container Registry
+    uses: docker/login-action@v3
+    with:
+      registry: ${{ env.REGISTRY }}
+      username: ${{ github.actor }}
+      password: ${{ secrets.GITHUB_TOKEN }}
+
+  - name: Build and push Frontend
+    if: hashFiles('docker-context/frontend/Dockerfile')
+    uses: docker/build-push-action@v5
+    with:
+      context: ./docker-context/frontend
+      file: ./docker-context/frontend/Dockerfile
+      push: true
+      tags: |
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:app-${{ env.APP_BRANCH }}
+      cache-from: type=gha
+      cache-to: type=gha,mode=max
+      build-args: |
+        BRANCH_SOURCE=${{ env.APP_BRANCH }}
+        CONFIG_SOURCE=${{ env.CONFIG_BRANCH }}
+
+  - name: Build and push Backend
+    if: hashFiles('docker-context/backend/Dockerfile')
+    uses: docker/build-push-action@v5
+    with:
+      context: ./docker-context/backend
+      file: ./docker-context/backend/Dockerfile
+      push: true
+      tags: |
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:latest
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:app-${{ env.APP_BRANCH }}
+      cache-from: type=gha
+      cache-to: type=gha,mode=max
+      build-args: |
+        BRANCH_SOURCE=${{ env.APP_BRANCH }}
+        CONFIG_SOURCE=${{ env.CONFIG_BRANCH }}
+
+  - name: Build and push LLM Service
+    if: hashFiles('docker-context/llm-service/Dockerfile')
+    uses: docker/build-push-action@v5
+    with:
+      context: ./docker-context/llm-service
+      file: ./docker-context/llm-service/Dockerfile
+      push: true
+      tags: |
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:latest
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:model-${{ env.MODEL_BRANCH }}
+      cache-from: type=gha
+      cache-to: type=gha,mode=max
+      build-args: |
+        BRANCH_SOURCE=${{ env.MODEL_BRANCH }}
+        CONFIG_SOURCE=${{ env.CONFIG_BRANCH }}
+
+  - name: Build and push LLM Service (with Ollama)
+    if: |
+      hashFiles('docker-context/llm-ollama/Dockerfile') &&
+      (github.ref == 'refs/heads/d2-ai' || github.ref == 'refs/heads/main')
+    uses: docker/build-push-action@v5
+    with:
+      context: ./docker-context/llm-ollama
+      file: ./docker-context/llm-ollama/Dockerfile
+      push: true
+      tags: |
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:ollama-latest
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:ollama-${{ github.sha }}
+        ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:model-${{ env.MODEL_BRANCH }}-ollama
+      cache-from: type=gha
+      cache-to: type=gha,mode=max
+      platforms: linux/amd64
+      build-args: |
+        BRANCH_SOURCE=${{ env.MODEL_BRANCH }}
+        CONFIG_SOURCE=${{ env.CONFIG_BRANCH }}
+      timeout: 30m
+
+  - name: Create build summary
+    if: always()
+    run: |
+      echo "## 🏗️ Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+      echo "" >> $GITHUB_STEP_SUMMARY
+      echo "**Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+      echo "**Build time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+      echo "" >> $GITHUB_STEP_SUMMARY
+      
+      echo "### ✅ Successfully built:" >> $GITHUB_STEP_SUMMARY
+      
+      if hashFiles('docker-context/frontend/Dockerfile'); then
+        echo "- **Frontend**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+      fi
+      
+      if hashFiles('docker-context/backend/Dockerfile'); then
+        echo "- **Backend**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+      fi
+      
+      if hashFiles('docker-context/llm-service/Dockerfile'); then
+        echo "- **LLM Service**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+      fi
+      
+      if hashFiles('docker-context/llm-ollama/Dockerfile') && ([[ "${{ github.ref }}" == "refs/heads/d2-ai" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]); then
+        echo "- **LLM Service (with Ollama)**: \`${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:ollama-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+      fi
+      
+      echo "" >> $GITHUB_STEP_SUMMARY
+      echo "### 🌿 Source Branches:" >> $GITHUB_STEP_SUMMARY
+      echo "- Frontend/Backend: \`${{ env.APP_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
+      echo "- LLM Service: \`${{ env.MODEL_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
+      echo "- Config: \`${{ env.CONFIG_BRANCH }}\`" >> $GITHUB_STEP_SUMMARY
+      
+      echo "" >> $GITHUB_STEP_SUMMARY
+      echo "### 📦 Pull Commands:" >> $GITHUB_STEP_SUMMARY
+      echo '```bash' >> $GITHUB_STEP_SUMMARY
+      echo "# Frontend" >> $GITHUB_STEP_SUMMARY
+      echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+      echo "" >> $GITHUB_STEP_SUMMARY
+      echo "# Backend" >> $GITHUB_STEP_SUMMARY
+      echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+      echo "" >> $GITHUB_STEP_SUMMARY
+      echo "# LLM Service" >> $GITHUB_STEP_SUMMARY
+      echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+      if hashFiles('docker-context/llm-ollama/Dockerfile') && ([[ "${{ github.ref }}" == "refs/heads/d2-ai" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]); then
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# LLM Service (with Ollama)" >> $GITHUB_STEP_SUMMARY
+        echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/llm-service:ollama-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+      fi
+      echo '```' >> $GITHUB_STEP_SUMMARY
+      
+
