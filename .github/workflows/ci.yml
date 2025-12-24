@@ -466,7 +466,7 @@ jobs:
         ref: ${{ env.MODEL_BRANCH }}
         path: model
 
-    - name: Checkout config files (infra branch)
+    - name: Checkout config files 
       uses: actions/checkout@v4
       with:
         ref: ${{ env.CONFIG_BRANCH }}
