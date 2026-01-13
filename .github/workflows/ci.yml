@@ -454,25 +454,25 @@ jobs:
     if: github.event_name != 'pull_request'
 
     steps:
-      - name: Checkout app code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.APP_BRANCH }}
-          path: app
+      # - name: Checkout app code
+      #   uses: actions/checkout@v4
+      #   with:
+      #     ref: ${{ env.APP_BRANCH }}
+      #     path: app
 
-      - name: Checkout model code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.MODEL_BRANCH }}
-          path: model
+      # - name: Checkout model code
+      #   uses: actions/checkout@v4
+      #   with:
+      #     ref: ${{ env.MODEL_BRANCH }}
+      #     path: model
 
       - name: Checkout config
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CONFIG_BRANCH }}
-          path: config
+        #   path: config
 
-      - name: 🔍 Verify Dockerfiles
+      - name: Verify Dockerfiles
         run: |
           ls -la config/frontend/Dockerfile.dev
           ls -la config/backend/Dockerfile.dev
