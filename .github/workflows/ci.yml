@@ -5,13 +5,13 @@ on:
     branches: [ fullstackkk, d2-ai, MLOPS ]
   pull_request:
     branches: [ fullstackkk, d2-ai, MLOPS ]
-  workflow_dispatch:  
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository }}
-  MODEL_BRANCH: d2-ai          
-  APP_BRANCH: fullstackkk       
+  MODEL_BRANCH: d2-ai
+  APP_BRANCH: fullstackkk
   CONFIG_BRANCH: MLOPS
 
 jobs:
@@ -21,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_BRANCH }}
 
       - name: Check frontend exists
         run: |
@@ -51,6 +53,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_BRANCH }}
 
       - name: Check backend exists
         run: |
@@ -84,142 +88,37 @@ jobs:
   test-llm-service:
     name: Test LLM Service
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' && 
-      (github.ref == 'refs/heads/d2-ai' || 
-       github.ref == 'refs/heads/main' || 
-       github.ref == 'refs/heads/MLOPS' ||
-       github.event_name == 'pull_request' && 
-       (contains(github.head_ref, 'd2-ai') || 
-        github.base_ref == 'd2-ai' ||
-        github.base_ref == 'main' ||
-        github.base_ref == 'MLOPS'))
+    if: github.ref == 'refs/heads/d2-ai'
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        ref: d2-ai
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.MODEL_BRANCH }}
 
-    - name: Debug - Show directory structure
-      run: |
-        echo "Current directory:"
-        pwd
-        echo ""
-        echo "Directory contents:"
-        ls -la
-        echo ""
-        echo "Looking for Python files..."
-        find . -name "*.py" | head -20 || echo "No Python files found"
+      - name: Check structure
+        run: |
+          test -f requirements.txt
+          ls *.py
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: pip
+          cache-dependency-path: requirements.txt
 
-    - name: Check and create requirements.txt if missing
-      run: |
-        if [ ! -f "requirements.txt" ]; then
-          echo "requirements.txt not found, creating default..."
-          cat > requirements.txt <<EOF
-          fastapi==0.104.1
-          uvicorn[standard]==0.24.0
-          pillow==10.1.0
-          requests==2.31.0
-          httpx==0.25.1
-          python-multipart==0.0.6
-          pydantic==2.5.0
-          pydantic-settings==2.1.0
-          google-generativeai==0.3.0
-          opencv-python-headless==4.8.1.78
-          numpy==1.24.3
-          pytest==7.4.3
-          pytest-asyncio==0.21.1
-          black==23.11.0
-          flake8==6.1.0
-        EOF
-          echo "Created requirements.txt with default dependencies"
-          cat requirements.txt
-        else
-          echo "Found existing requirements.txt"
-          cat requirements.txt
-        fi
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Install Ollama
-      run: |
-        curl -fsSL https://ollama.com/install.sh | sh
-        ollama --version
+      - name: Format & lint
+        run: |
+          black --check .
+          flake8 .
 
-    - name: Run unit tests
-      run: |
-        echo "Running tests..."
-        python -m pytest tests/ -v --tb=short || echo "Tests completed with exit code: $?"
+      - name: Tests
+        run: pytest -v
 
-    - name: Run linting
-      run: |
-        echo "Running linting..."
-        # Ищем Python файлы
-        python_files=$(find . -name "*.py" -not -path "./.*" 2>/dev/null | head -10 || true)
-        if [ -n "$python_files" ]; then
-          echo "Found Python files:"
-          echo "$python_files"
-          echo ""
-          # Запускаем линтинг
-          black --check . 2>/dev/null || echo "Black check completed"
-          flake8 . 2>/dev/null || echo "Flake8 check completed"
-        else
-          echo "No Python files found for linting"
-        fi
-
-    - name: Check for expected files
-      run: |
-        echo "=== Checking for expected LLM service files ==="
-        echo ""
-        
-        files_to_check=(
-          "main.py"
-          "app.py"
-          "requirements.txt"
-        )
-
-    - name: Test API startup (quick test)
-      run: |
-        echo "Testing if the application can start..."
-        # Пробуем импортировать и запустить быстрый тест
-        python -c "
-        import sys
-        import subprocess
-        import time
-        
-        print('Python version:', sys.version)
-        print('')
-        
-        # Пробуем импортировать основные модули
-        try:
-            import fastapi
-            print('✓ fastapi', fastapi.__version__)
-        except ImportError as e:
-            print('✗ fastapi:', e)
-        
-        try:
-            import uvicorn
-            print('✓ uvicorn', uvicorn.__version__)
-        except ImportError as e:
-            print('✗ uvicorn:', e)
-        
-        try:
-            import pydantic
-            print('✓ pydantic', pydantic.__version__)
-        except ImportError as e:
-            print('✗ pydantic:', e)
-        
-        print('')
-        print('All dependencies seem to be installed correctly.')
-        "
-  
   test-ollama-integration:
     name: Ollama Integration
     runs-on: ubuntu-latest
@@ -233,6 +132,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.MODEL_BRANCH }}
 
       - uses: actions/setup-python@v4
         with:
@@ -244,6 +145,7 @@ jobs:
       - name: Check Ollama API
         run: |
           curl -f http://localhost:11434/api/tags
+
   build-docker:
     name: Build Docker Images
     runs-on: ubuntu-latest
@@ -251,44 +153,75 @@ jobs:
     if: github.event_name != 'pull_request'
 
     steps:
-      # - name: Checkout app code
-      #   uses: actions/checkout@v4
-      #   with:
-      #     ref: ${{ env.APP_BRANCH }}
-      #     path: app
+      - name: Create build context directory
+        run: mkdir -p docker-context
 
-      # - name: Checkout model code
-      #   uses: actions/checkout@v4
-      #   with:
-      #     ref: ${{ env.MODEL_BRANCH }}
-      #     path: model
+      - name: Checkout app code (frontend/backend)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_BRANCH }}
+          path: docker-context/app
 
-      - name: Checkout config
+      - name: Checkout model code (LLM service)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.MODEL_BRANCH }}
+          path: docker-context/model
+
+      - name: Checkout config files
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CONFIG_BRANCH }}
-        #   path: config
+          path: docker-context/config
 
-      - name: Verify Dockerfiles
+      - name: Verify all files exist
         run: |
-          ls -la config/frontend/Dockerfile.dev
-          ls -la config/backend/Dockerfile.dev
-          ls -la config/llm-service/Dockerfile
+          echo "Checking app files:"
+          ls -la docker-context/app/
+          
+          echo "Checking model files:"
+          ls -la docker-context/model/
+          
+          echo "Checking config files:"
+          ls -la docker-context/config/frontend/
+          ls -la docker-context/config/backend/
+          ls -la docker-context/config/llm-service/
 
-      - name: Prepare frontend context
+      - name: Prepare frontend build context
         run: |
-          mkdir -p docker-context/frontend
-          cp -r app/frontend/* docker-context/frontend/
-          cp config/frontend/Dockerfile.dev docker-context/frontend/Dockerfile
+          mkdir -p docker-context/frontend-build
+          cp -r docker-context/app/frontend/* docker-context/frontend-build/
+          cp docker-context/config/frontend/Dockerfile.dev docker-context/frontend-build/Dockerfile
+          echo "Frontend context ready:"
+          ls -la docker-context/frontend-build/
 
-      - name: Prepare backend context
+      - name: Prepare backend build context
         run: |
-          mkdir -p docker-context/backend
-          cp -r app/backend/* docker-context/backend/
-          cp config/backend/Dockerfile.dev docker-context/backend/Dockerfile
+          mkdir -p docker-context/backend-build
+          cp -r docker-context/app/backend/* docker-context/backend-build/
+          cp docker-context/config/backend/Dockerfile.dev docker-context/backend-build/Dockerfile
+          echo "Backend context ready:"
+          ls -la docker-context/backend-build/
 
-      - name: Prepare llm-service context
+      - name: Prepare llm-service build context
         run: |
-          mkdir -p docker-context/llm-service
-          cp -r model/* docker-context/llm-service/
-          cp config/llm-service/Dockerfile docker-context/llm-service/Dockerfile
+          mkdir -p docker-context/llm-service-build
+          cp -r docker-context/model/* docker-context/llm-service-build/
+          cp docker-context/config/llm-service/Dockerfile docker-context/llm-service-build/Dockerfile
+          echo "LLM service context ready:"
+          ls -la docker-context/llm-service-build/
+
+      - name: Build Frontend Docker image
+        run: |
+          cd docker-context/frontend-build
+          docker build -t frontend:latest -f Dockerfile .
+
+      - name: Build Backend Docker image
+        run: |
+          cd docker-context/backend-build
+          docker build -t backend:latest -f Dockerfile .
+
+      - name: Build LLM Service Docker image
+        run: |
+          cd docker-context/llm-service-build
+          docker build -t llm-service:latest -f Dockerfile .
