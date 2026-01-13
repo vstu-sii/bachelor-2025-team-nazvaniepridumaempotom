@@ -452,38 +452,44 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-frontend, test-backend, test-llm-service]
     if: github.event_name != 'pull_request'
-  
+
     steps:
       - name: Checkout app code
         uses: actions/checkout@v4
         with:
           ref: ${{ env.APP_BRANCH }}
           path: app
-  
+
       - name: Checkout model code
         uses: actions/checkout@v4
         with:
           ref: ${{ env.MODEL_BRANCH }}
           path: model
-  
+
       - name: Checkout config
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CONFIG_BRANCH }}
           path: config
-  
+
+      - name: 🔍 Verify Dockerfiles
+        run: |
+          ls -la config/frontend/Dockerfile.dev
+          ls -la config/backend/Dockerfile.dev
+          ls -la config/llm-service/Dockerfile
+
       - name: Prepare frontend context
         run: |
           mkdir -p docker-context/frontend
           cp -r app/frontend/* docker-context/frontend/
-          cp config/frontend/Dockerfile docker-context/frontend/Dockerfile
-  
+          cp config/frontend/Dockerfile.dev docker-context/frontend/Dockerfile
+
       - name: Prepare backend context
         run: |
           mkdir -p docker-context/backend
           cp -r app/backend/* docker-context/backend/
-          cp config/backend/Dockerfile docker-context/backend/Dockerfile
-  
+          cp config/backend/Dockerfile.dev docker-context/backend/Dockerfile
+
       - name: Prepare llm-service context
         run: |
           mkdir -p docker-context/llm-service
