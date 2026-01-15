@@ -11,14 +11,17 @@ from api.dependencies.auth import get_current_user
 
 router = APIRouter()
 
+
 # Mock функция для создания токена (в реальном приложении использовать JWT)
 def create_access_token(data: dict, expires_delta: timedelta = None):
     return "mock_token_for_development"
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
+    user_data: UserCreate, db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Регистрация нового пользователя.
@@ -30,23 +33,23 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Пользователь с таким email уже существует",
         )
-    
+
     # Создаём пользователя
     user = create_user(db, user_data)
-    
+
     return {
         "id": user.id,
         "username": user.username,
         "email": user.email,
         "is_active": user.is_active,
         "is_verified": user.is_verified,
-        "created_at": user.created_at
+        "created_at": user.created_at,
     }
+
 
 @router.post("/login", response_model=Token)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ) -> Dict[str, str]:
     """
     Аутентификация пользователя и получение токена.
@@ -58,23 +61,22 @@ async def login(
             detail="Неверный email или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Создаём mock токен
     access_token = create_access_token(data={"sub": user.email})
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 @router.get("/me", response_model=UserResponse)
 async def read_current_user(
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Получение информации о текущем пользователе.
     """
     return current_user
+
 
 @router.post("/logout")
 async def logout() -> Dict[str, str]:
