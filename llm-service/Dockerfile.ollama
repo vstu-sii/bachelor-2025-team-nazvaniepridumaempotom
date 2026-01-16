@@ -1,0 +1,37 @@
+# Простой Dockerfile для Ollama с моделями
+FROM ubuntu:22.04
+
+# Устанавливаем Ollama
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://ollama.com/install.sh | sh
+
+# Создаем директорию для моделей
+RUN mkdir -p /root/.ollama
+
+# Создаем скрипт запуска
+RUN echo '#!/bin/bash\n\
+\n\
+# Запускаем сервер в фоновом режиме\n\
+ollama serve &\n\
+\n\
+# Ждем запуска\n\
+sleep 15\n\
+\n\
+# Скачиваем модели\n\
+echo "Downloading models..."\n\
+\n\
+for model in llava:latest llama3.2:1b; do\n\
+    echo "Pulling $$model..."\n\
+    ollama pull $$model || echo "Warning: Failed to pull $$model"\n\
+done\n\
+\n\
+echo "Ollama is ready!"\n\
+ollama list\n\
+\n\
+# Ждем завершения\n\
+wait\n\
+' > /start.sh && chmod +x /start.sh
+
+EXPOSE 11434
+
+CMD ["/start.sh"]

@@ -1,0 +1,161 @@
+version: "3.9"
+
+services:
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api
+      CHOKIDAR_USEPOLLING: "true"
+    networks:
+      - app-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: npm run dev
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/logs:/app/logs
+    environment:
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/cooking_assistant
+      LLM_SERVICE_URL: http://localhost:8001
+      ENVIRONMENT: development
+      DEBUG: "true"
+      PYTHONPATH: /app/src
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    command: >
+      sh -c "cd src &&
+             pip install -r requirements.txt &&
+             python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    restart: unless-stopped
+
+  # Database
+  db:
+    image: postgres:15-alpine
+    container_name: db
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cooking_assistant
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cooking_assistant"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # LLM Service
+  llm-service:
+    build:
+      context: ./llm-service
+      dockerfile: Dockerfile
+    container_name: llm-service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./llm-service/app:/app
+    environment:
+      OLLAMA_HOST: http://localhost:11434
+      ENVIRONMENT: development
+      DEBUG: "true"
+    networks:
+      - app-network
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Ollama с предустановленными моделями
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "timeout", "10", "ollama", "list"]
+      interval: 30s
+      timeout: 20s
+      retries: 10
+      start_period: 180s
+    deploy:
+      resources:
+        reservations:
+          memory: 8G
+        limits:
+          memory: 16G
+    restart: unless-stopped
+
+  # Jupyter
+  jupyter:
+    image: jupyter/scipy-notebook:latest
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./llm-service/notebooks:/home/jovyan/work
+      - ./llm-service/app:/home/jovyan/app
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+      JUPYTER_TOKEN: dev123
+      OLLAMA_HOST: http://localhost:11434
+    networks:
+      - app-network
+    command: start-notebook.sh --NotebookApp.token='dev123'
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  ollama_data:

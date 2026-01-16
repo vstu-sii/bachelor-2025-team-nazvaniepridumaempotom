@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  langfuse:
+    image: langfuse/langfuse:latest
+    ports:
+      - "3002:3000"
+    environment:
+      DATABASE_URL: postgresql://app:app@db:5432/app
+      NEXTAUTH_SECRET: local-secret
+      SALT: local-salt
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app

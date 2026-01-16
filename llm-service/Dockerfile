@@ -1,31 +1,35 @@
-# Dockerfile
-FROM python:3.11-slim
-
-# Устанавливаем системные зависимости для работы с изображениями
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-# Копируем requirements и устанавливаем зависимости
+# Устанавливаем только необходимые зависимости
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем Python зависимости
+RUN pip install --no-cache-dir --upgrade pip
+
+# Копируем зависимости проекта
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# Устанавливаем дополнительные зависимости для работы с изображениями
+RUN pip install --no-cache-dir \
+    pillow \
+    opencv-python-headless \
+    numpy \
+    scikit-image
 
 # Копируем исходный код
-COPY . .
+COPY app/ /app/
+COPY models/ /app/models/
+COPY notebooks/ /app/notebooks/
 
-# Скачиваем модели при сборке (можно вынести в отдельный скрипт)
-RUN ollama pull llava:latest && \
-    ollama pull llama3.2:1b
+# Создаем необходимые директории
+RUN mkdir -p /app/uploads /app/logs /app/cache /app/temp
 
-# Запускаем Ollama сервис и наше приложение
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+EXPOSE 8001
 
-EXPOSE 8001 11434
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["python", "main.py"]
