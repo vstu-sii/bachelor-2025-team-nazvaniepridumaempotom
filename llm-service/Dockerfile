@@ -24,8 +24,8 @@ RUN pip install --no-cache-dir \
 
 # Копируем исходный код
 COPY app/ /app/
-COPY models/ /app/models/
-COPY notebooks/ /app/notebooks/
+# COPY models/ /app/models/
+# COPY notebooks/ /app/notebooks/
 
 # Создаем необходимые директории
 RUN mkdir -p /app/uploads /app/logs /app/cache /app/temp
