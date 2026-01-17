@@ -36,11 +36,11 @@ services:
       - ./backend:/app
       - ./backend/logs:/app/logs
     environment:
-      DATABASE_URL: postgresql://postgres:password@localhost:5432/cooking_assistant
-      LLM_SERVICE_URL: http://localhost:8001
+      DATABASE_URL: postgresql://postgres:password@db:5432/cooking_assistant
+      LLM_SERVICE_URL: http://llm-service:8001
       ENVIRONMENT: development
       DEBUG: "true"
-      PYTHONPATH: /app/src
+      PYTHONPATH: /app/src  # Change this
     networks:
       - app-network
     depends_on:
@@ -53,11 +53,17 @@ services:
       retries: 5
       start_period: 90s
     command: >
-      sh -c "cd src &&
-             pip install -r requirements.txt &&
-             python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "
+        echo 'Installing dependencies...' &&
+        pip install -r /app/requirements.txt &&
+        cd /app/src &&
+        pip install -r requirements.txt &&
+        echo 'Starting application...' &&
+        # Run from the src directory with PYTHONPATH set correctly
+        cd /app/src &&
+        python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+      "
     restart: unless-stopped
-
   # Database
   db:
     image: postgres:15-alpine
@@ -69,7 +75,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
     healthcheck:
@@ -91,7 +96,7 @@ services:
     volumes:
       - ./llm-service/app:/app
     environment:
-      OLLAMA_HOST: http://localhost:11434
+      OLLAMA_HOST: http://ollama:11434  # Changed: localhost → ollama
       ENVIRONMENT: development
       DEBUG: "true"
     networks:
@@ -104,13 +109,17 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 60s  # Added start_period
+    command: >
+      sh -c "pip install -r requirements.txt &&
+             python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
     restart: unless-stopped
 
-  # Ollama с предустановленными моделями
+  # Ollama
   ollama:
     build:
       context: ./llm-service
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.ollama
     container_name: ollama
     ports:
       - "11434:11434"
@@ -121,7 +130,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "timeout", "10", "ollama", "list"]
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]  # Simpler healthcheck
       interval: 30s
       timeout: 20s
       retries: 10
@@ -146,7 +155,7 @@ services:
     environment:
       JUPYTER_ENABLE_LAB: "yes"
       JUPYTER_TOKEN: dev123
-      OLLAMA_HOST: http://localhost:11434
+      OLLAMA_HOST: http://ollama:11434  # Changed: localhost → ollama
     networks:
       - app-network
     command: start-notebook.sh --NotebookApp.token='dev123'

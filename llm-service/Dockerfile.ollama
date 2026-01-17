@@ -1,8 +1,8 @@
 # Простой Dockerfile для Ollama с моделями
 FROM ubuntu:22.04
 
-# Устанавливаем Ollama
-RUN apt-get update && apt-get install -y curl && \
+# Устанавливаем необходимые зависимости, включая zstd
+RUN apt-get update && apt-get install -y curl zstd && \
     curl -fsSL https://ollama.com/install.sh | sh
 
 # Создаем директорию для моделей
