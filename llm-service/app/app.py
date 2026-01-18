@@ -12,7 +12,7 @@ def root():
     return {"status": "ok", "project": "recipe-eval"}
 
 
-#
+
 # --------------------------
 # 1) Анализ изображения через Ollama LLaVA Vision
 # --------------------------
