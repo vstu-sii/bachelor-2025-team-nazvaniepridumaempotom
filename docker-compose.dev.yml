@@ -24,7 +24,6 @@ services:
     command: npm run dev
     restart: unless-stopped
 
-  # Backend API
   backend:
     build:
       context: ./backend
@@ -36,7 +35,7 @@ services:
       - ./backend:/app
       - ./backend/logs:/app/logs
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5433/cooking_assistant
+      DATABASE_URL: postgresql://postgres:password@db:5432/cooking_assistant  
       LLM_SERVICE_URL: http://llm-service:8001
       ENVIRONMENT: development
       DEBUG: "true"
@@ -47,24 +46,24 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 90s
+      retries: 3
+      start_period: 60s
     command: >
       sh -c "
-        echo 'Installing dependencies...' &&
-        pip install -r /app/requirements.txt &&
-        cd /app/src &&
-        pip install -r requirements.txt &&
+        echo 'Waiting for database to be ready...' &&
+        while ! nc -z db 5432; do
+          sleep 1
+        done &&
+        echo 'Database ready. Installing dependencies...' &&
+        pip install --no-cache-dir -r /app/requirements.txt &&
         echo 'Starting application...' &&
-        # Run from the src directory with PYTHONPATH set correctly
         cd /app &&
         python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
       "
-    restart: unless-stopped
-  # Database
+    restart: unless-stopped # Database
   db:
     image: postgres:15-alpine
     container_name: db

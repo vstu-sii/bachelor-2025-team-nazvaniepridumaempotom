@@ -3,6 +3,7 @@
 import subprocess
 from fastapi import HTTPException
 
+
 def analyze_image_ollama(image_path: str) -> str:
     """
     Анализ изображения через Ollama LLaVA Vision
@@ -17,17 +18,19 @@ def analyze_image_ollama(image_path: str) -> str:
     # формируем запрос для LLaVA (мультимодальный)
     prompt = [
         {"mime_type": "image/jpeg", "data": img_bytes},
-        "Опиши, что изображено на фото."
+        "Опиши, что изображено на фото.",
     ]
 
     result = subprocess.run(
         ["ollama", "run", "llava"],
         input=str(prompt).encode("utf-8"),
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
     )
 
     if result.returncode != 0:
-        raise HTTPException(status_code=500, detail=f"Ollama Vision ошибка: {result.stderr.decode()}")
+        raise HTTPException(
+            status_code=500, detail=f"Ollama Vision ошибка: {result.stderr.decode()}"
+        )
 
     return result.stdout.decode().strip()

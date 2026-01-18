@@ -15,6 +15,8 @@ def load_prompt(path: str):
 
     # Проверим что нужные поля есть
     if "system" not in data or "user" not in data:
-        raise ValueError(f"Файл промпта {path} должен содержать ключи 'system' и 'user'")
+        raise ValueError(
+            f"Файл промпта {path} должен содержать ключи 'system' и 'user'"
+        )
 
     return data["system"], data["user"]

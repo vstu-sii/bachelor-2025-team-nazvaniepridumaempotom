@@ -15,7 +15,7 @@ def llama_generate(system: str, user: str):
         ["ollama", "run", "llama3.2:1b"],
         input=full_prompt.encode("utf-8"),
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
     )
 
     if result.returncode != 0:

@@ -6,11 +6,13 @@ import os
 app = FastAPI()
 #
 
+
 @app.get("/")
 def root():
     return {"status": "ok", "project": "recipe-eval"}
 
-# 
+
+#
 # --------------------------
 # 1) Анализ изображения через Ollama LLaVA Vision
 # --------------------------
@@ -26,7 +28,7 @@ async def analyze_image(file: UploadFile = File(...)):
     return {"caption": caption, "file": file.filename}
 
 
-# --------------------------  
+# --------------------------
 # 2) Оценка блюда через LLaMA 3.2 (Ollama или локально)
 # --------------------------
 @app.post("/evaluate")
@@ -70,8 +72,4 @@ async def process_image(file: UploadFile = File(...)):
     # 3) Получаем оценку от LLaMA
     evaluation = llama_generate(prompt)
 
-    return {
-        "caption": caption,
-        "evaluation": evaluation,
-        "file": file.filename
-    }
+    return {"caption": caption, "evaluation": evaluation, "file": file.filename}

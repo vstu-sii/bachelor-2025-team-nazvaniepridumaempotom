@@ -2,16 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Устанавливаем системные зависимости
+# Устанавливаем системные зависимости для Debian
 RUN apt-get update && apt-get install -y \
     curl \
     gcc \
     g++ \
-    postgresql-client \
+    netcat-openbsd \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Копируем зависимости
-COPY ./requirements.txt .
+COPY requirements.txt .
 
 # Устанавливаем Python зависимости
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -20,14 +21,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Копируем исходный код
 COPY . .
 
-# Создаем необходимые директории
-RUN mkdir -p logs
+# Настраиваем PYTHONPATH для корректных импортов
+ENV PYTHONPATH=/app:/app
 
-# Устанавливаем рабочую директорию
-WORKDIR /app
+# Создаем директорию для логов
+RUN mkdir -p /app/logs
 
-# Открываем порт
 EXPOSE 8000
 
-# Команда для разработки
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Команда запуска - исправлена для вашей структуры
+# Ваш app находится в api.main, а не просто main
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

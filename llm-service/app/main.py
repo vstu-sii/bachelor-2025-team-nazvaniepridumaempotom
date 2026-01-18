@@ -26,4 +26,6 @@ else:
 # 3) Запуск FastAPI
 # -----------------------------
 print("Запускаю FastAPI...")
-subprocess.run([sys.executable, "-m", "uvicorn", "src.app:app", "--reload", "--port", "8001"])
+subprocess.run(
+    [sys.executable, "-m", "uvicorn", "src.app:app", "--reload", "--port", "8001"]
+)

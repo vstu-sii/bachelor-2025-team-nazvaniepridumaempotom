@@ -23,7 +23,7 @@ def compute_rouge(reference: str, generated: str):
         return {
             "rouge-1": round(scores["rouge-1"]["f"], 4),
             "rouge-2": round(scores["rouge-2"]["f"], 4),
-            "rouge-l": round(scores["rouge-l"]["f"], 4)
+            "rouge-l": round(scores["rouge-l"]["f"], 4),
         }
     except:
         return {"rouge-1": 0, "rouge-2": 0, "rouge-l": 0}
