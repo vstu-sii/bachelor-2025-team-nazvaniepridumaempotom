@@ -1,5 +1,4 @@
 from pydantic import BaseModel, EmailStr, validator
-from typing import Optional
 from datetime import datetime
 
 class UserBase(BaseModel):
@@ -16,7 +15,7 @@ class UserCreate(UserBase):
         return v
 
 class UserUpdate(BaseModel):
-    username: Optional[str] = None
+    username: str | None = None
     email: Optional[EmailStr] = None
 
 class UserResponse(UserBase):
@@ -33,4 +32,4 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    username: str | None = None
