@@ -17,7 +17,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  return (👨‍🍳
+  return (
     <html lang="ru">
       <body className={`${inter.className} bg-gray-50`}>
         <AuthProvider>
