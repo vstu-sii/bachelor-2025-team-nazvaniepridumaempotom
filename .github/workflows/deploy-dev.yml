@@ -1,0 +1,13 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: |
+          echo "Deploy to dev cluster (SSH / Fly.io / Render / EC2)"
