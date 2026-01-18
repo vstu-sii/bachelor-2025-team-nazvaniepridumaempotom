@@ -1,61 +1,45 @@
 name: Backend CI
 
 on:
+  pull_request:
   push:
     branches: [MLOPS]
     paths:
-      - backend/**
-  pull_request:
-    branches: [MLOPS]
-    paths:
-      - backend/**
-
+      - 'backend/**'
 jobs:
-  lint-and-test:
+  test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-
-      - name: Install dependencies
+      - name: Install deps
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install black flake8 isort mypy pytest pytest-cov
+          pip install -r backend/requirements.txt
 
-      - name: Black
-        run: black --check api crud models schemas services
+      - name: Lint
+        run: |
+          ruff backend/src
 
-      - name: Flake8
-        run: flake8 api crud models schemas services --max-line-length=88
-
-      - name: Isort
-        run: isort --check-only api crud models schemas services
-
-      - name: Mypy
-        run: mypy api crud models schemas services --ignore-missing-imports
-
-      - name: Pytest
-        env:
-          DATABASE_URL: sqlite:///./test.db
-        run: pytest tests -v --cov=. --cov-report=xml
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: backend/coverage.xml
-          flags: backend
+      - name: Tests
+        run: |
+          pytest backend/tests

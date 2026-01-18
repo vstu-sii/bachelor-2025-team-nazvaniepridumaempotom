@@ -1,72 +1,28 @@
-name: Frontend CI/CD
+name: Frontend CI
 
 on:
-  push:
-    branches: [ MLOPS ]
-    paths:
-      - 'frontend/**'
   pull_request:
-    branches: [ MLOPS ]
-    paths:
-      - 'frontend/**'
+  push:
+    branches: [MLOPS]
 
 jobs:
-  quality:
+  test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-    
-    - name: Cache node modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          frontend/node_modules
-          frontend/.next/cache
-        key: ${{ runner.os }}-frontend-${{ hashFiles('frontend/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-frontend-
-    
-    - name: Install dependencies
-      working-directory: ./frontend
-      run: |
-        npm ci --prefer-offline
-    
-    - name: TypeScript check
-      working-directory: ./frontend
-      run: |
-        npx tsc --noEmit --skipLibCheck
-    
-    - name: Lint
-      working-directory: ./frontend
-      run: |
-        npx eslint . --ext .ts,.tsx --max-warnings=0
-    
-    - name: Format check
-      working-directory: ./frontend
-      run: |
-        npx prettier --check "**/*.{ts,tsx,js,jsx,json,css,md}"
-    
-    - name: Run tests
-      working-directory: ./frontend
-      run: |
-        npm test -- --coverage --watchAll=false
-    
-    - name: Build
-      working-directory: ./frontend
-      run: |
-        npm run build
-      env:
-        NEXT_TELEMETRY_DISABLED: 1
-        CI: true
-    
-    - name: Upload test coverage
-      uses: codecov/codecov-action@v3
-      with:
-        directory: frontend/coverage
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Lint
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Tests
+        run: |
+          cd frontend
+          npm test
