@@ -8,7 +8,7 @@ from src.metrics import compute_bleu, compute_rouge
 TEST_PATH = "data/processed/test.jsonl"
 REPORT_PATH = "data/processed/eval_report.jsonl"
 
-
+# 
 def evaluate_sample(sample):
     """
     Оценивает один пример из датасета.

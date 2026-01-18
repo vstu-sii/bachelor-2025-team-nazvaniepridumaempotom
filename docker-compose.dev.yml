@@ -17,6 +17,7 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8000/api
       CHOKIDAR_USEPOLLING: "true"
       PORT: 3001
+      NODE_OPTIONS: "--dns-result-order=ipv4first"
     networks:
       - app-network
     depends_on:
