@@ -4,7 +4,7 @@ from src.model_wrapper import llama_generate
 import os
 
 app = FastAPI()
-
+#
 
 @app.get("/")
 def root():
@@ -26,7 +26,7 @@ async def analyze_image(file: UploadFile = File(...)):
     return {"caption": caption, "file": file.filename}
 
 
-# --------------------------
+# --------------------------  
 # 2) Оценка блюда через LLaMA 3.2 (Ollama или локально)
 # --------------------------
 @app.post("/evaluate")

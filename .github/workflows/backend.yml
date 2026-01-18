@@ -6,7 +6,7 @@ on:
     paths:
       - 'backend/**'
   pull_request:
-    branches: [ MLOPS ]
+    branches: [ MLOPS]
     paths:
       - 'backend/**'
 
@@ -37,27 +37,19 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -r requirements.txt
-        pip install black==23.12.1 flake8 isort mypy pytest pytest-cov
+        pip install black flake8 isort mypy pytest pytest-cov
     
-    - name: Auto-format with Black (check only)
-      id: black-check
+    - name: Check formatting with Black
       run: |
-        black --check --diff --config pyproject.toml api/ crud/ models/ schemas/ services/ || true
-        # Сохраняем статус для следующего шага
-        black --check --config pyproject.toml api/ crud/ models/ schemas/ services/ && echo "black_passed=true" >> $GITHUB_OUTPUT || echo "black_passed=false" >> $GITHUB_OUTPUT
-    
-    - name: Fix formatting issues
-      if: steps.black-check.outputs.black_passed == 'false' && github.event_name == 'pull_request'
-      run: |
-        black --config pyproject.toml api/ crud/ models/ schemas/ services/
+        black --check --diff api/ crud/ models/ schemas/ services/
     
     - name: Lint with flake8
       run: |
-        flake8 api/ crud/ models/ schemas/ services/ --max-line-length=88 --extend-ignore=E203,W503,E501
+        flake8 api/ crud/ models/ schemas/ services/ --max-line-length=88
     
     - name: Sort imports with isort
       run: |
-        isort --check-only --diff --profile black api/ crud/ models/ schemas/ services/
+        isort --check-only --diff api/ crud/ models/ schemas/ services/
     
     - name: Type checking with mypy
       run: |
