@@ -4,7 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { AppProvider } from '@/contexts/AppContext'
 import { Toaster } from 'react-hot-toast'
-
+// 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  return (
+  return (👨‍🍳
     <html lang="ru">
       <body className={`${inter.className} bg-gray-50`}>
         <AuthProvider>
