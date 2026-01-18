@@ -2,11 +2,11 @@ name: LLM Service CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ MLOPS ]
     paths:
       - 'llm-service/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ MLOPS ]
     paths:
       - 'llm-service/**'
 
