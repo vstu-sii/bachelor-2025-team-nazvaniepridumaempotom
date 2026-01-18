@@ -10,8 +10,8 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     reload = os.getenv("RELOAD", "true").lower() == "true"
 
-    print(f"🚀 Запуск Cooking Assistant API на http://{host}:{port}")
-    print(f"📚 Документация: http://{host}:{port}/api/docs")
-    print(f"🔄 Режим перезагрузки: {reload}")
+    print(f"Запуск Cooking Assistant API на http://{host}:{port}")
+    print(f"Документация: http://{host}:{port}/api/docs")
+    print(f" Режим перезагрузки: {reload}")
 
     uvicorn.run("api.main:app", host=host, port=port, reload=reload, log_level="info")
