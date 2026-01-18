@@ -1,35 +1,33 @@
-FROM python:3.11-slim-bookworm
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Устанавливаем только необходимые зависимости
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Устанавливаем системные зависимости для Debian
+RUN apt-get update && apt-get install -y \
     curl \
-    wget \
+    gcc \
+    g++ \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем Python зависимости
-RUN pip install --no-cache-dir --upgrade pip
-
-# Копируем зависимости проекта
+# Копируем зависимости
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем дополнительные зависимости для работы с изображениями
-RUN pip install --no-cache-dir \
-    pillow \
-    opencv-python-headless \
-    numpy \
-    scikit-image
+# Устанавливаем Python зависимости
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Копируем исходный код
-COPY app/ /app/
-# COPY models/ /app/models/
-# COPY notebooks/ /app/notebooks/
+COPY . .
 
-# Создаем необходимые директории
-RUN mkdir -p /app/uploads /app/logs /app/cache /app/temp
+# Настраиваем PYTHONPATH для корректных импортов
+ENV PYTHONPATH=/app:/app
 
-EXPOSE 8001
+# Создаем директорию для логов
+RUN mkdir -p /app/logs
 
-CMD ["python", "main.py"]
+EXPOSE 8000
+
+# Команда запуска - исправлена для вашей структуры
+# Ваш app находится в api.main, а не просто main
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

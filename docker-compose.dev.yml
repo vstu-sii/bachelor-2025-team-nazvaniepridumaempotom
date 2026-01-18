@@ -40,7 +40,7 @@ services:
       LLM_SERVICE_URL: http://llm-service:8001
       ENVIRONMENT: development
       DEBUG: "true"
-      PYTHONPATH: /app/src  # Change this
+      PYTHONPATH: /app
     networks:
       - app-network
     depends_on:
@@ -60,7 +60,7 @@ services:
         pip install -r requirements.txt &&
         echo 'Starting application...' &&
         # Run from the src directory with PYTHONPATH set correctly
-        cd /app/src &&
+        cd /app &&
         python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
       "
     restart: unless-stopped
@@ -96,7 +96,7 @@ services:
     volumes:
       - ./llm-service/app:/app
     environment:
-      OLLAMA_HOST: http://ollama:11434  # Changed: localhost → ollama
+      OLLAMA_HOST: http://ollama:11434  
       ENVIRONMENT: development
       DEBUG: "true"
     networks:
@@ -109,7 +109,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s  # Added start_period
+      start_period: 60s  
     command: >
       sh -c "pip install -r requirements.txt &&
              python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
@@ -130,7 +130,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]  # Simpler healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]  
       interval: 30s
       timeout: 20s
       retries: 10
@@ -155,7 +155,7 @@ services:
     environment:
       JUPYTER_ENABLE_LAB: "yes"
       JUPYTER_TOKEN: dev123
-      OLLAMA_HOST: http://ollama:11434  # Changed: localhost → ollama
+      OLLAMA_HOST: http://ollama:11434  
     networks:
       - app-network
     command: start-notebook.sh --NotebookApp.token='dev123'

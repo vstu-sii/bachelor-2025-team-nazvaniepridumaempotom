@@ -24,7 +24,7 @@ COPY . .
 RUN mkdir -p logs
 
 # Устанавливаем рабочую директорию
-WORKDIR /app/src
+WORKDIR /app
 
 # Открываем порт
 EXPOSE 8000

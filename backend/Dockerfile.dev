@@ -20,14 +20,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Копируем исходный код
 COPY . .
 
-# Устанавливаем зависимости из src (если они есть)
-WORKDIR /app/src
-RUN if [ -f "requirements.txt" ]; then \
-        pip install --no-cache-dir -r requirements.txt; \
-    fi
-
 # Настраиваем PYTHONPATH для корректных импортов
-ENV PYTHONPATH=/app/src:/app
+ENV PYTHONPATH=/app:/app
 
 # Создаем директорию для логов
 RUN mkdir -p /app/logs
