@@ -28,7 +28,8 @@ def get_db():
     finally:
         db.close()
 
-# 
+
+#
 # Функция для создания таблиц
 def create_tables():
     from .models import Base

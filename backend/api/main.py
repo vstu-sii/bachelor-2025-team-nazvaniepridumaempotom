@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 
 from .routes import auth, dishes
+
 # , statistics, users, upload
 
 
@@ -79,6 +80,7 @@ def create_application() -> FastAPI:
         }
 
     return app
+
 
 # Создаём экземпляр приложения
 app = create_application()

@@ -1,4 +1,13 @@
-from sqlalchemy import Column, Integer, String, Numeric, Text, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Numeric,
+    Text,
+    DateTime,
+    ForeignKey,
+    UniqueConstraint,
+)
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .base import Base
@@ -25,7 +34,7 @@ class Statistics(Base):
     calculation_date = Column(DateTime(timezone=True), server_default=func.now())
 
     # Индексы
-    __table_args__ = (UniqueConstraint('user_id', 'dish_type'),)
+    __table_args__ = (UniqueConstraint("user_id", "dish_type"),)
 
     def __repr__(self):
         return f"<Statistics(id={self.id}, user_id={self.user_id}, dish_type={self.dish_type})>"
