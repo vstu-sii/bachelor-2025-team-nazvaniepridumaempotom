@@ -213,7 +213,7 @@ class TestRatingCRUD:
             recipe_feedback="Original",
             recommendations="Original",
         )
-        created_rating = rating.create_rating(db_session, rating_data)
+
 
         # Обновляем оценку
         update_data = {

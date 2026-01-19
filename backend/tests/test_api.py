@@ -160,7 +160,6 @@ class TestDishEndpoints:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
         # В данном mock-тесте все блюда будут draft
 
     def test_get_dish_by_id(self, client, auth_headers, test_dish):
