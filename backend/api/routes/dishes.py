@@ -67,6 +67,7 @@ async def create_new_dish(
         "updated_at": dish.updated_at,
     }
 
+
 @router.post("/{dish_id}/analyze", response_model=RatingResponse)
 async def analyze_dish(
     dish_id: int,

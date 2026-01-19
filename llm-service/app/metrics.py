@@ -16,7 +16,6 @@ def compute_bleu(reference: str, generated: str):
 
     return round(score, 4)
 
-
 def compute_rouge(reference: str, generated: str):
     try:
         scores = rouge.get_scores(generated, reference)[0]
