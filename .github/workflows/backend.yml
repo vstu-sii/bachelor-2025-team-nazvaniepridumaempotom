@@ -31,16 +31,18 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"  
+          python-version: "3.11"
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
+          pip install ruff pytest
           pip install -r backend/requirements.txt
 
-      - name: Lint
+      - name: Lint with ruff
         run: |
-          ruff backend/src
+          ruff check backend/
 
-      - name: Tests
+      - name: Run tests
         run: |
-          pytest backend/tests
+          cd backend
+          pytest tests/ -v
