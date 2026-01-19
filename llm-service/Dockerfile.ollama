@@ -32,5 +32,4 @@ wait\n\
 ' > /start.sh && chmod +x /start.sh
 
 EXPOSE 11434
-
 CMD ["/start.sh"]
