@@ -23,13 +23,15 @@ jobs:
         run: |
           cd frontend
           npm install --legacy-peer-deps --no-optional
+          # Установите тестовые зависимости
+          npm install --save-dev jest-environment-jsdom @testing-library/react @testing-library/jest-dom
 
       - name: Lint
         run: |
           cd frontend
           npm run lint
 
-      - name: Run tests with Jest
+      - name: Run tests
         run: |
           cd frontend
           npm test -- --passWithNoTests
