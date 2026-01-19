@@ -8,7 +8,6 @@ RUN npm install --legacy-peer-deps
 
 # Копируем остальные файлы
 COPY . .
-
 # Открываем порт
 EXPOSE 3001
 # Запускаем приложение

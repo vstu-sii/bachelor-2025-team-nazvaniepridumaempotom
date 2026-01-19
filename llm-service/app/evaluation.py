@@ -4,7 +4,6 @@ from src.model_wrapper import llama_generate
 from src.prompt_loader import load_prompt
 from src.metrics import compute_bleu, compute_rouge
 
-
 TEST_PATH = "data/processed/test.jsonl"
 REPORT_PATH = "data/processed/eval_report.jsonl"
 

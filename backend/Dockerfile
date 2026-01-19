@@ -26,6 +26,5 @@ RUN mkdir -p /app/logs
 
 EXPOSE 8000
 
-# Команда запуска - исправлена для вашей структуры
 # Ваш app находится в api.main, а не просто main
 CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
