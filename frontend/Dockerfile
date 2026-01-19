@@ -1,5 +1,4 @@
 FROM node:20-alpine
-
 WORKDIR /app
 
 # Копируем package.json первым для кэширования зависимостей
