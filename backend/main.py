@@ -2,6 +2,7 @@
 """
 Скрипт для запуска FastAPI приложения.
 """
+
 import uvicorn
 import os
 

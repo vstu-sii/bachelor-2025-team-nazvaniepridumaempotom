@@ -1,5 +1,4 @@
 import pytest
-from datetime import datetime
 from backend.models import User, Dish, Rating, DishType, DishStatus
 
 

@@ -1,7 +1,5 @@
-import pytest
 from fastapi import status
 from unittest.mock import Mock, patch
-import json
 
 
 class TestAuthEndpoints:

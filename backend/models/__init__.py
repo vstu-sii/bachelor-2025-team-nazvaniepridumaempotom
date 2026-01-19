@@ -5,4 +5,4 @@ from .rating import Rating
 from .recipe import Recipe
 from .statistics import Statistics
 
-__all__ = ["Base", "User", "Dish", "DishStatus" "Rating", "Recipe", "Statistics"]
+__all__ = ["Base", "User", "Dish", "DishStatusRating", "Recipe", "Statistics"]

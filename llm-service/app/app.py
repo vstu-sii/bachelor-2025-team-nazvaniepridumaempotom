@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from src.vision_ollama import analyze_image_ollama  # <-- Ollama LLaVA Vision
 from src.model_wrapper import llama_generate
-import os
 
 app = FastAPI()
 #

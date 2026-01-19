@@ -1,6 +1,4 @@
 import subprocess
-import json
-import tempfile
 
 
 def llama_generate(system: str, user: str):

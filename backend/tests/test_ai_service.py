@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import Mock, patch
 from backend.services.ai_service import AIService
 from backend.schemas.dish import DishAnalysisRequest, DishType
 from backend.schemas.rating import AnalysisResult

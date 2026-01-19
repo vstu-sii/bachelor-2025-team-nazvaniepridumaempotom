@@ -1,4 +1,3 @@
-import pytest
 from backend.crud import user, dish, rating
 from backend.schemas.user import UserCreate, UserUpdate
 from backend.schemas.dish import DishCreate, DishUpdate

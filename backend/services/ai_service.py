@@ -1,6 +1,5 @@
 import time
 import random
-from typing import Dict, Any
 from schemas.dish import DishAnalysisRequest
 from schemas.rating import AnalysisResult
 

@@ -9,7 +9,6 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from .base import Base
 
 
