@@ -3,7 +3,6 @@ import json
 REPORT_PATH = "data/processed/eval_report.jsonl"
 OUTPUT_PATH = "data/processed/error_report.jsonl"
 
-
 def analyze_errors():
     results = []
     print("Читаю eval_report.jsonl...")
@@ -19,28 +18,15 @@ def analyze_errors():
                 issues.append("BLEU слишком низкий (почти нет совпадений)")
 
             if entry["rouge_l"] < 0.1:
-                issues.append(
-                    "ROUGE-L очень низкий → модель не повторяет ключевые элементы"
-                )
+                issues.append("ROUGE-L очень низкий → модель не повторяет ключевые элементы")
 
             # --- 2. модель слишком болтлива ---
             if entry["output_length"] > entry["input_length"] * 3:
                 issues.append("Слишком длинный ответ → возможно галлюцинация")
 
             # --- 3. модель вообще не упоминает еду ---
-            food_keywords = [
-                "ингредиент",
-                "блюдо",
-                "рецепт",
-                "готов",
-                "кухн",
-                "dish",
-                "cook",
-                "recipe",
-            ]
-            if not any(
-                word.lower() in entry["output_text"].lower() for word in food_keywords
-            ):
+            food_keywords = ["ингредиент", "блюдо", "рецепт", "готов", "кухн", "dish", "cook", "recipe"]
+            if not any(word.lower() in entry["output_text"].lower() for word in food_keywords):
                 issues.append("В ответе нет упоминаний еды → оффтоп")
 
             # --- 4. Чрезмерное повторение слов ---

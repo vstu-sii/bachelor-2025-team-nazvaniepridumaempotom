@@ -4,8 +4,10 @@ from src.model_wrapper import llama_generate
 from src.prompt_loader import load_prompt
 from src.metrics import compute_bleu, compute_rouge
 
+
 TEST_PATH = "data/processed/test.jsonl"
 REPORT_PATH = "data/processed/eval_report.jsonl"
+
 
 def evaluate_sample(sample):
     """
@@ -28,17 +30,22 @@ def evaluate_sample(sample):
     # --- 2. Загружаем SystemPrompt и UserPrompt ---
     system_prompt, user_prompt = load_prompt("src/prompts/food_evaluation_prompt.json")
 
+
     # Подставляем данные в user prompt
     final_user_prompt = user_prompt.format(description=description)
 
     # --- 3. отправляем в LLaMA ---
     start_time = time.time()
-    response = llama_generate(system=system_prompt, user=final_user_prompt)
+    response = llama_generate(
+        system=system_prompt,
+        user=final_user_prompt
+    )
     latency = round(time.time() - start_time, 3)
 
     # --- 4. Метрики ---
     bleu = compute_bleu(description, response)
     rouge_scores = compute_rouge(description, response)
+
 
     return {
         "input_description": description,
@@ -46,6 +53,7 @@ def evaluate_sample(sample):
         "output_text": response,
         "input_length": len(final_user_prompt),
         "output_length": len(response),
+
         # --- Метрики ---
         "bleu": bleu,
         "rouge_1": rouge_scores["rouge-1"],

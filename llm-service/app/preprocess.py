@@ -7,9 +7,7 @@ from sklearn.model_selection import train_test_split
 RAW_DIR = "data/raw"
 OUT_DIR = "data/processed"
 
-CSV_PATH = os.path.join(
-    RAW_DIR, "Food Ingredients and Recipe Dataset with Image Name Mapping.csv"
-)
+CSV_PATH = os.path.join(RAW_DIR, "Food Ingredients and Recipe Dataset with Image Name Mapping.csv")
 IMG_DIR = os.path.join(RAW_DIR, "Food Images")
 
 
@@ -43,7 +41,7 @@ def row_to_record(row):
         "title": str(row["Title"]).strip(),
         "ingredients": ingredients,
         "instructions": str(row["Instructions"]).strip(),
-        "image": image_path,
+        "image": image_path
     }
 
 
