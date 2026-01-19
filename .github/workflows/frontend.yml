@@ -8,7 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    continue-on-error: true  # ← Это позволяет job продолжиться при ошибках
+    continue-on-error: true  
 
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +40,6 @@ jobs:
           cd frontend
           npm run build || echo "Build failed, but continuing..."
 
-      - name: Always succeed
+      - name: Succeed message
         if: always()
         run: echo "Frontend CI completed (some steps may have failed)"
