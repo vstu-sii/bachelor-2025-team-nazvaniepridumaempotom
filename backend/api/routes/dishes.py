@@ -54,7 +54,6 @@ async def create_new_dish(
         user_recipe_text=user_recipe_text,
         photo_url=f"/uploads/dishes/{filename}",
     )
-# 
     dish = create_dish(db, dish_data, current_user["id"])
 
     return {
@@ -68,8 +67,6 @@ async def create_new_dish(
         "updated_at": dish.updated_at,
     }
 
-
-#
 @router.post("/{dish_id}/analyze", response_model=RatingResponse)
 async def analyze_dish(
     dish_id: int,

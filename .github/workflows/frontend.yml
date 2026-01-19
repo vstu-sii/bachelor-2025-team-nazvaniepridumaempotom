@@ -15,7 +15,7 @@ jobs:
       - name: Install deps
         run: |
           cd frontend
-          npm ci
+          npm install --legacy-peer-deps  # ← Измените здесь
 
       - name: Lint
         run: |
