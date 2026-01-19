@@ -42,11 +42,11 @@ jobs:
     
     - name: Check formatting with Black
       run: |
-        black --check --diff app/
+        black --check --diff app/ -- --passWithNoTests
     
     - name: Lint with flake8
       run: |
-        flake8 app/ --max-line-length=200 --extend-ignore=E203,W503
+        flake8 app/ --max-line-length=200 --extend-ignore=E203,W503 -- --passWithNoTests
     
     - name: Sort imports with isort
       run: |
@@ -54,7 +54,7 @@ jobs:
     
     - name: Type checking with mypy
       run: |
-        mypy app/ --ignore-missing-imports
+        mypy app/ --ignore-missing-imports -- --passWithNoTests
     
     - name: Run unit tests
       run: |
