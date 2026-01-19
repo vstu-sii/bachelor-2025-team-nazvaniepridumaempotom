@@ -2,107 +2,61 @@ version: "3.9"
 
 services:
   frontend:
-    image: ghcr.io/your-org/frontend:latest
-    container_name: frontend
+    build: ./frontend
     ports:
       - "3001:3001"
     environment:
-      NEXT_PUBLIC_API_URL: https://api.example.com/api
-      PORT: 3001
-      NODE_ENV: production
-    depends_on:
-      backend:
-        condition: service_healthy
+      NEXT_PUBLIC_API_URL: http://backend:8000/api
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
     restart: always
-    networks:
-      - app-network
 
   backend:
-    image: ghcr.io/your-org/backend:latest
-    container_name: backend
-    env_file:
-      - .env.prod
-    environment:
-      ENVIRONMENT: production
-      DEBUG: "false"
-      PYTHONUNBUFFERED: "1"
+    build: ./backend
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-      llm-service:
-        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db:5432/cooking_assistant
+      LLM_SERVICE_URL: http://llm-service:8001
+      ENVIRONMENT: production
+      DEBUG: "false"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health"]
     restart: always
-    networks:
-      - app-network
-      - monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   db:
     image: postgres:15-alpine
-    container_name: db
-    env_file:
-      - .env.prod
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      retries: 5
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
     restart: always
-    networks:
-      - app-network
 
   llm-service:
-    image: ghcr.io/your-org/llm-service:latest
-    container_name: llm-service
+    build: ./llm-service
     environment:
       OLLAMA_HOST: http://ollama:11434
-      ENVIRONMENT: production
-    depends_on:
-      ollama:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      retries: 5
     restart: always
-    networks:
-      - app-network
-      - monitoring
 
   ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
+    build:
+      context: ./llm-service
+      dockerfile: Dockerfile.ollama
     volumes:
       - ollama_data:/root/.ollama
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 30s
-      retries: 10
     deploy:
       resources:
         limits:
-          memory: 24G
+          memory: 16G
     restart: always
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
-  monitoring:
-    driver: bridge
 
 volumes:
   postgres_data:
